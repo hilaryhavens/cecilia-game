@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cecilia: A Marriage Quest</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #0a0506;
+    background-image:
+      radial-gradient(ellipse at center, #2c1810 0%, #0a0506 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Press Start 2P', monospace;
+    color: #d4af37;
+    padding: 20px;
+    gap: 15px;
+  }
+  #title-bar {
+    font-size: 12px;
+    letter-spacing: 6px;
+    text-shadow: 3px 3px 0 #000, 0 0 10px #d4af37;
+  }
+  #tv-frame {
+    background: linear-gradient(180deg, #5a4030 0%, #3a2010 50%, #2a1505 100%);
+    padding: 35px 30px;
+    border-radius: 80px 80px 20px 20px;
+    box-shadow:
+      inset 0 0 60px rgba(0,0,0,0.8),
+      0 0 80px rgba(212, 175, 55, 0.2),
+      0 20px 50px rgba(0,0,0,0.9);
+    position: relative;
+  }
+  #tv-frame::after {
+    content: '';
+    position: absolute;
+    bottom: 12px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 10px;
+    background: #1a0f08; border-radius: 5px;
+  }
+  #screen {
+    background: #000;
+    border: 8px solid #0a0506;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 0 0 2px #d4af37;
+    line-height: 0;
+  }
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+  #controls {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .key {
+    color: #ff6b6b;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 8px;
+    border: 1px solid #d4af37;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+  <div id="title-bar">★ FRANCES BURNEY PRESENTS ★</div>
+  <div id="tv-frame">
+    <div id="screen">
+      <canvas id="game" width="800" height="600"></canvas>
+    </div>
+  </div>
+  <div id="controls">
+    <span class="key">SPACE/ENTER</span> SELECT |
+    <span class="key">↑↓</span> CHOOSE |
+    <span class="key">←→</span> MOVE |
+    <span class="key">SPACE</span> JUMP (DOUBLE-TAP FOR WING!)
+  </div>
+
+<script>
+// ================================================
+// CECILIA: A MARRIAGE QUEST
+// A retro 8-bit adventure based on the 1782 novel
+// "Cecilia" by Frances Burney
+// ================================================
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const W = 800, H = 600;
+
+// === COLOR PALETTE (NES-inspired + Georgian accents) ===
+const C = {
+  '.': null, 'k': '#0F0F1F', 'w': '#FCFCFC', 'c': '#F4E1C1',
+  'g': '#FFD700', 'y': '#FFFF60', 'F': '#B40000', 'r': '#FF6060',
+  'p': '#FFB6C1', 'i': '#FF1493', 'B': '#3060F0', 'l': '#A0D0F0',
+  'n': '#002060', 'v': '#40A040', 'h': '#80E080', 'd': '#006030',
+  't': '#8B4513', 'a': '#502818', 's': '#FFD0A0', 'e': '#FFE040',
+  'o': '#808080', 'u': '#404048', 'm': '#A040F0', 'x': '#FFA040',
+  'q': '#D08040', 'j': '#A05030', 'z': '#80C0F0', 'Z': '#4080F0',
+  'M': '#FF80A0', 'C': '#E0E0FF', 'L': '#604020', '+': '#C0C0C0',
+  'K': '#FFE0B0', 'I': '#702030'
+};
+
+// === SPRITES (16x20 characters, '.' = transparent) ===
+const SP = {};
+
+// Cecilia - heroine in pink empire dress
+SP.cecilia = [
+  "....eeee........",
+  "...eeeeee.......",
+  "..eessssee......",
+  "..eskkksse......",
+  "..essssssse.....",
+  "..essiiisse.....",
+  "..essssssse.....",
+  "..eeeeeeee......",
+  "....pppp........",
+  "...pppppp.......",
+  "..pppppppp......",
+  "..pppppppp......",
+  "..pppppppp......",
+  "..pppppppp......",
+  "..pppppppp......",
+  "..pppppppp......",
+  "..pppppppp......",
+  "...pppppp.......",
+  "....ssss........",
+  "....kkkk........",
+];
+
+// Mr. Delvile - nobleman, dark hair, blue tailcoat
+SP.delvile = [
+  "....nnnn........",
+  "...nnnnnn.......",
+  "..nssssssn......",
+  "..nskkkssn......",
+  "..nsssssssn.....",
+  "..nsssisssn.....",
+  "..nsssssssn.....",
+  "..nnnnnnnn......",
+  "....cccc........",
+  "...BBBBBB.......",
+  "..BBBBBBBB......",
+  "..BBBBBBBB......",
+  "..BBBBBBBB......",
+  "..BBBBBBBB......",
+  "..BBBBBBBB......",
+  "..BBBBBBBB......",
+  "..BBBBBBBB......",
+  "...BBBBBB.......",
+  "....ssss........",
+  "....kkkk........",
+];
+
+// Mr. Monckton - schemer, green coat
+SP.monckton = [
+  "....nnnn........",
+  "...nnnnnn.......",
+  "..nssssssn......",
+  "..nskkkssn......",
+  "..nsssssssn.....",
+  "..nssiiissn.....",
+  "..nsssssssn.....",
+  "..nnnnnnnn......",
+  "....cccc........",
+  "...vvvvvv.......",
+  "..vvvvvvvv......",
+  "..vvvvvvvv......",
+  "..vvvvvvvv......",
+  "..vvvvvvvv......",
+  "..vvvvvvvv......",
+  "..vvvvvvvv......",
+  "..vvvvvvvv......",
+  "...vvvvvv.......",
+  "....ssss........",
+  "....kkkk........",
+];
+
+// Sir Robert Floyer - red coat, jolly buffoon
+SP.floyer = [
+  "....FFFF........",
+  "...FFFFFF.......",
+  "..FssssssF......",
+  "..FskkkssF......",
+  "..FsssssssF.....",
+  "..FssiiiissF....",
+  "..FsssssssF.....",
+  "..FFFFFFFFF.....",
+  "....cccc........",
+  "...rrrrrr.......",
+  "..rrrrrrrr......",
+  "..rrrrrrrr......",
+  "..rrrrrrrr......",
+  "..rrrrrrrr......",
+  "..rrrrrrrr......",
+  "..rrrrrrrr......",
+  "..rrrrrrrr......",
+  "...rrrrrr.......",
+  "....ssss........",
+  "....kkkk........",
+];
+
+// Mr. Briggs - elderly guardian, white wig, brown coat
+SP.briggs = [
+  "....wwww........",
+  "...wwwwww.......",
+  "..wssssssw......",
+  "..wskkkssw......",
+  "..wsssssssw.....",
+  "..wsssissw......",
+  "..wsssssssw.....",
+  "..wwwwwwww......",
+  "....cccc........",
+  "...tttttt.......",
+  "..tttttttt......",
+  "..tttttttt......",
+  "..tttttttt......",
+  "..tttttttt......",
+  "..tttttttt......",
+  "..tttttttt......",
+  "..tttttttt......",
+  "...tttttt.......",
+  "....ssss........",
+  "....kkkk........",
+];
+
+// Mrs. Delvile - tall, dignified, dark dress
+SP.mrsdelvile = [
+  "................",
+  "....nnnn........",
+  "...nnnnnn.......",
+  "..nssssssn......",
+  "..nskkkssn......",
+  "..nsssssssn.....",
+  "..nnnnnnnn......",
+  "................",
+  "....nnnn........",
+  "...nnnnnn.......",
+  "..nnnnnnnn......",
+  "..nnnnnnnn......",
+  "..nnnnnnnn......",
+  "..nnnnnnnn......",
+  "..nnnnnnnn......",
+  "..nnnnnnnn......",
+  "..nnnnnnnn......",
+  "...nnnnnn.......",
+  "................",
+  "................",
+];
+
+// Heart collectible
+SP.heart = [
+  "..rr..rr........",
+  ".rrrrrrrr.......",
+  "rrrrrrrrrr......",
+  "rrrrrrrrrr......",
+  ".rrrrrrrr.......",
+  "..rrrrrr........",
+  "...rrrr.........",
+  "....rr..........",
+  "................",
+  "................",
+];
+
+// Coin (Mario-style)
+SP.coin = [
+  "....gggg........",
+  "...gccccg.......",
+  "..gcsssscg......",
+  ".gcskkksscg.....",
+  ".gcskgssscg.....",
+  ".gcskgssscg.....",
+  ".gcskkksscg.....",
+  "..gcsssscg......",
+  "...gccccg.......",
+  "....gggg........",
+];
+
+// Cloud
+SP.cloud = [
+  "................",
+  ".....CCC........",
+  "....CCCCC.......",
+  "...CCCCCCCCC....",
+  "..CCCCCCCCCCC...",
+  "..CCCCCCCCCCC...",
+  "..CCCCCCCCCCC...",
+  "...CCCCCCCCC....",
+  "................",
+  "................",
+];
+
+// Tree
+SP.tree = [
+  "....aaaa........",
+  "...dvvvvvd......",
+  "..dvvhhvvd......",
+  "..dvvhhvvd......",
+  "..dvvhhvvd......",
+  "..dvvvvvd.......",
+  "....ttt.........",
+  "....ttt.........",
+  "....ttt.........",
+  "....ttt.........",
+];
+
+// Scandal cloud (obstacle)
+SP.scandal = [
+  "....MMMM........",
+  "...MFFFFFM......",
+  "..MFFFFFFM......",
+  ".MFFMMFFFFM.....",
+  ".MFMMFFFFFFM....",
+  "MFFFFFFFFFFFM...",
+  ".MFFFFFFFFFFM...",
+  "..MMMMMMMMM.....",
+  "................",
+  "................",
+];
+
+// === DRAWING FUNCTIONS ===
+function drawSprite(sprite, x, y, scale, colorMap = C) {
+  const maxWidth = Math.max(...sprite.map(r => r.length));
+  for (let row = 0; row < sprite.length; row++) {
+    const line = sprite[row].padEnd(maxWidth, '.');
+    for (let col = 0; col < line.length; col++) {
+      const ch = line[col];
+      if (ch === '.' || ch === ' ') continue;
+      const color = colorMap[ch];
+      if (color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.floor(x + col * scale), Math.floor(y + row * scale), scale, scale);
+      }
+    }
+  }
+}
+function fillRect(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+}
+function drawText(text, x, y, color, size = 2, align = 'left', shadow = true) {
+  ctx.font = `${size * 8}px "Press Start 2P", monospace`;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'top';
+  if (shadow) {
+    ctx.fillStyle = '#000';
+    ctx.fillText(text, Math.floor(x) + size, Math.floor(y) + size);
+  }
+  ctx.fillStyle = color;
+  ctx.fillText(text, Math.floor(x), Math.floor(y));
+}
+function wrapText(text, maxChars) {
+  const paragraphs = text.split('\n');
+  const lines = [];
+  for (const para of paragraphs) {
+    if (para === '') { lines.push(''); continue; }
+    const words = para.split(' ');
+    let current = '';
+    for (const word of words) {
+      const test = current ? current + ' ' + word : word;
+      if (test.length > maxChars) {
+        if (current) lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+  }
+  return lines;
+}
+
+// === GAME STATE ===
+let state = 'title';
+let frame = 0;
+let currentSceneIdx = 0;
+let displayText = '';
+let fullText = '';
+let textIdx = 0;
+let textTimer = 0;
+let choiceIdx = 0;
+let currentScene = null;
+let currentEndingType = null;
+
+let stats = { hearts: 0, gold: 10, reputation: 5, wit: 0 };
+let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
+let mg = null;
+
+// === SCENE DATA ===
+const SCENES = [
+  { type: 'title' },
+  {
+    bg: 'manor', speaker: '',
+    text: "Miss Cecilia Beverley, aged nineteen, has come into a fortune of TEN THOUSAND POUNDS, plus THREE THOUSAND POUNDS a year. But a strange condition was set upon the inheritance...",
+  },
+  {
+    bg: 'manor', speaker: '',
+    text: "To keep her fortune, Cecilia must marry a gentleman willing to take HER family name. Otherwise, every penny reverts to her miserly relative, Mr. Eggleston!",
+  },
+  {
+    bg: 'london', speaker: '',
+    text: "And so our heroine sets out into Georgian London, where suitors of all kinds await - some noble, some foolish, and some most dangerous indeed...",
+  },
+  {
+    bg: 'manor', speaker: 'MR. BRIGGS',
+    text: "What? make it over to a scoundrel? no, no, won't suffer it; sha'n't be, sha'n't be - don't marry proper! I'll have a care whom ye choose!'",
+    character: 'briggs',
+    choices: [
+      { text: "'Sir, I shall choose with wisdom.'", effect: () => { stats.wit += 1; } },
+      { text: "'Sir, I shall consult you on all matters.'", effect: () => { stats.gold += 1; } },
+      { text: "'Sir, I am mistress of my own fate!'", effect: () => { stats.reputation += 1; } }
+    ]
+  },
+  {
+    bg: 'ballroom', speaker: 'MRS. DELVILE',
+    text: "'Dear Miss Beverley! How delightful! Pray allow me to introduce my son, Mortimer - and our family friend, Mr. Monckton.'",
+    character: 'mrsdelvile',
+    choices: [
+      { text: "Greet Mortimer Delvile warmly.", effect: () => { suitors.delvile += 1; } },
+      { text: "Engage instead Mr. Monckton in conversation.", effect: () => { suitors.monckton += 1; } },
+      { text: "Thank her politely but keep distance.", effect: () => { stats.reputation += 1; } }
+    ]
+  },
+  {
+    bg: 'garden', speaker: 'MR. MONCKTON',
+    text: "'My dear Miss Beverley, I confess I am most eager to be of service. Your late uncle trusted me implicitly - perhaps we might discuss... arrangements?'",
+    character: 'monckton',
+    choices: [
+      { text: "'How kind. Tell me more.'", effect: () => { suitors.monckton += 1; stats.reputation -= 1; } },
+      { text: "'Sir, I am not for sale!'", effect: () => { stats.reputation += 1; suitors.monckton -= 1; } },
+      { text: "'Sir, your concern is noted.'", effect: () => {} }
+    ]
+  },
+  {
+    bg: 'garden', speaker: 'MR. DELVILE',
+    text: "'Miss Beverley, I must be honest with you. I love you - but my family name is precious to me. I cannot take yours. Yet I cannot bear to see you sacrificed to mercenary schemes.'",
+    character: 'delvile',
+    choices: [
+      { text: "'Mortimer, your honesty moves me deeply.'", effect: () => { suitors.delvile += 2; } },
+      { text: "'I am honored by your regard.'", effect: () => { suitors.delvile += 1; } },
+      { text: "'Then we are at an impasse.'", effect: () => {} }
+    ]
+  },
+  {
+    bg: 'storm', speaker: '',
+    text: "Suddenly, scandal strikes! Wild rumors spread through London - tales of Cecilia's fortune, her family, her virtue! She must flee the city to escape the wagging tongues!",
+    onContinue: () => { state = 'minigame'; initMinigame(); }
+  },
+  {
+    bg: 'manor', speaker: '',
+    text: "Cecilia has reached the safety of the country estate! With time to reflect, she must now decide her future...",
+    onContinue: () => { currentSceneIdx = 10; setupScene(); }
+  },
+  {
+    bg: 'manor', speaker: '',
+    text: "What path shall Cecilia choose? Her heart, her fortune, her freedom - all hang in the balance.",
+    choices: [
+      { text: "Marry Mr. Delvile for true love.", effect: () => { chooseEnding('delvile'); } },
+      { text: "Remain independent and unmarried.", effect: () => { chooseEnding('independence'); } },
+      { text: "Marry Mr. Arnott for security.", effect: () => { chooseEnding('arnott'); } },
+      { text: "Trust Mr. Monckton after all.", effect: () => { chooseEnding('monckton'); } }
+    ]
+  }
+];
+
+const ENDINGS = {
+  delvile: {
+    title: "TRUE LOVE TRIUMPHS!",
+    text: "Mr. Delvile, though he could not take your name, received approval from his mother Mrs. Delvile. You marry Mortimer - and though the family name is not yours and you lose your fortune, your love is real and true.\n\nLike Cecilia herself, you found that love can transcend mere convention.\n\nTHE END",
+    bg: 'wedding'
+  },
+  independence: {
+    title: "INDEPENDENCE!",
+    text: "With fortune secured and reputation intact, you choose not to marry at all. You become a celebrated hostess in London, independent and free - exactly as Cecilia herself chose in the novel's most poignant possibility.\n\nThe world may whisper, but you are YOURSELF.\n\nTHE END",
+    bg: 'garden'
+  },
+  arnott: {
+    title: "A FORTUNE MARRIED!",
+    text: "Mr. Arnott, despite his foolishness, takes your name. He loves you, you are comfortable, and though you cannot return his affection, you are safe from Mr. Monckton's schemes. You shall be Mrs. Beverley and rich, though not happy.\n\nTHE END",
+    bg: 'ballroom'
+  },
+  monckton: {
+    title: "RUIN!",
+    text: "Mr. Monckton's schemes are revealed, but too late. Your reputation is shattered, your fortune lost. Mr. Eggleston claims all. You are left with nothing but regret - a warning to all who would trust a schemer over their own heart.\n\nTHE END",
+    bg: 'storm'
+  }
+};
+
+function chooseEnding(type) {
+  currentEndingType = type;
+  state = 'ending';
+  currentScene = { ...ENDINGS[type] };
+  fullText = currentScene.text;
+  textIdx = 0;
+  displayText = '';
+  playSound('victory');
+}
+function setupScene() {
+  if (state === 'ending') return;
+  currentScene = SCENES[currentSceneIdx];
+  if (currentScene.type === 'title') return;
+  fullText = currentScene.text;
+  textIdx = 0;
+  displayText = '';
+  choiceIdx = 0;
+}
+function resetGame() {
+  stats = { hearts: 0, gold: 10, reputation: 5, wit: 0 };
+  suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
+  currentSceneIdx = 0;
+  choiceIdx = 0;
+  currentEndingType = null;
+  mg = null;
+}
+
+// === INPUT ===
+const keys = {};
+window.addEventListener('keydown', (e) => {
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'].includes(e.code)) e.preventDefault();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  if (!keys[e.code]) keys[e.code + '_p'] = true;
+  keys[e.code] = true;
+});
+window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+function keyPressed(code) {
+  if (keys[code + '_p']) { keys[code + '_p'] = false; return true; }
+  return false;
+}
+
+// === SOUND ===
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function tone(freq, dur, type = 'square', vol = 0.08) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + dur);
+}
+function playSound(type) {
+  switch (type) {
+    case 'select': tone(440, 0.08, 'square', 0.06); setTimeout(()=>tone(660,0.05,'square',0.06),60); break;
+    case 'coin':
+      tone(988, 0.05, 'square', 0.06);
+      setTimeout(() => tone(1319, 0.15, 'square', 0.06), 50);
+      break;
+    case 'jump':
+      tone(220, 0.1, 'square', 0.06);
+      setTimeout(() => tone(660, 0.05, 'square', 0.06), 50);
+      break;
+    case 'hurt':
+      tone(440, 0.05, 'sawtooth', 0.1);
+      setTimeout(() => tone(220, 0.2, 'sawtooth', 0.1), 50);
+      break;
+    case 'victory':
+      [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.2, 'square', 0.08), i * 100));
+      break;
+    case 'type':
+      tone(800 + Math.random() * 200, 0.02, 'square', 0.025);
+      break;
+  }
+}
+
+// === MINIGAME ===
+function initMinigame() {
+  mg = {
+    player: { x: 50, y: 380, vx: 0, vy: 0, onGround: true, jumpCount: 0 },
+    obstacles: [],
+    collectibles: [],
+    endX: 5000,
+    finished: false,
+    result: '',
+    levelTime: 0,
+    scrollX: 0
+  };
+  // Generate procedural level
+  for (let x = 600; x < 4900; x += 280 + Math.random() * 150) {
+    if (Math.random() < 0.5) {
+      mg.obstacles.push({ x: x, y: 350, w: 50, h: 50, type: 'scandal', hit: false });
+    }
+    if (Math.random() < 0.7) {
+      mg.collectibles.push({ x: x + 30, y: 270 + Math.random() * 50, w: 20, h: 18, type: 'heart', collected: false });
+    }
+    if (Math.random() < 0.5) {
+      mg.collectibles.push({ x: x + 110, y: 320, w: 14, h: 18, type: 'coin', collected: false });
+    }
+  }
+}
+function updateMinigame() {
+  if (mg.finished) return;
+  mg.levelTime++;
+  // Movement
+  if (keys['ArrowRight'] || keys['KeyD']) {
+    mg.player.vx = Math.min(mg.player.vx + 0.6, 4.5);
+  } else if (keys['ArrowLeft'] || keys['KeyA']) {
+    mg.player.vx = Math.max(mg.player.vx - 0.6, -3);
+  } else {
+    mg.player.vx *= 0.75;
+  }
+  // Jump (with double jump)
+  if (keyPressed('Space') || keyPressed('ArrowUp') || keyPressed('KeyW')) {
+    if (mg.player.onGround) {
+      mg.player.vy = -12;
+      mg.player.onGround = false;
+      mg.player.jumpCount = 1;
+      playSound('jump');
+    } else if (mg.player.jumpCount < 2) {
+      mg.player.vy = -10;
+      mg.player.jumpCount++;
+      playSound('jump');
+    }
+  }
+  // Gravity
+  mg.player.vy += 0.6;
+  if (mg.player.vy > 15) mg.player.vy = 15;
+  mg.player.x += mg.player.vx;
+  mg.player.y += mg.player.vy;
+  // Ground
+  if (mg.player.y > 380) {
+    mg.player.y = 380;
+    mg.player.vy = 0;
+    mg.player.onGround = true;
+    mg.player.jumpCount = 0;
+  }
+  // Bounds
+  if (mg.player.x < 50) { mg.player.x = 50; mg.player.vx = 0; }
+  // Finish
+  if (mg.player.x > mg.endX) {
+    mg.player.x = mg.endX;
+    mg.finished = true;
+    mg.result = 'success';
+    playSound('victory');
+  }
+  // Obstacles
+  for (const obs of mg.obstacles) {
+    if (obs.hit) continue;
+    if (mg.player.x + 25 > obs.x && mg.player.x < obs.x + obs.w &&
+        mg.player.y + 55 > obs.y && mg.player.y < obs.y + obs.h) {
+      obs.hit = true;
+      stats.reputation = Math.max(0, stats.reputation - 1);
+      mg.player.vy = -7;
+      mg.player.vx = -3;
+      playSound('hurt');
+    }
+  }
+  // Collectibles
+  for (const c of mg.collectibles) {
+    if (c.collected) continue;
+    if (mg.player.x + 25 > c.x && mg.player.x < c.x + c.w &&
+        mg.player.y + 55 > c.y && mg.player.y < c.y + c.h) {
+      c.collected = true;
+      if (c.type === 'heart') { stats.hearts += 1; suitors.delvile += 1; }
+      else if (c.type === 'coin') { stats.gold += 1; }
+      playSound('coin');
+    }
+  }
+  mg.scrollX = mg.player.x - 200;
+}
+
+// === BACKGROUND RENDERERS ===
+function drawBackground(type) {
+  switch (type) {
+    case 'title': {
+      fillRect(0, 0, W, H, '#000020');
+      // Stars
+      for (let i = 0; i < 80; i++) {
+        const sx = (i * 137 + 50) % W;
+        const sy = (i * 71 + 30) % (H - 200);
+        const tw = (frame + i * 13) % 80;
+        if (tw < 60) fillRect(sx, sy, 3, 3, C.w);
+        if (tw === 0) fillRect(sx-1, sy-1, 5, 5, C.w);
+      }
+      // Crescent moon
+      fillRect(80, 60, 40, 40, C.c);
+      fillRect(95, 50, 40, 40, '#000020');
+      // Ground/trees silhouette
+      fillRect(0, H - 100, W, 100, C.d);
+      for (let i = 0; i < 5; i++) {
+        const tx = 100 + i * 150;
+        fillRect(tx, H - 200, 30, 100, C.a);
+        fillRect(tx - 20, H - 180, 70, 50, C.v);
+      }
+      break;
+    }
+    case 'manor': {
+      fillRect(0, 0, W, H - 150, C.z);
+      fillRect(W - 120, 60, 50, 50, C.g);
+      // Hills
+      for (let i = 0; i < 3; i++) {
+        const hy = H - 250 + i * 30;
+        fillRect(0, hy, W, 50, i === 0 ? C.v : C.d);
+      }
+      // Manor
+      const mx = 250, my = 200, mw = 300, mh = 200;
+      fillRect(mx, my, mw, mh, C.c);
+      fillRect(mx - 20, my - 30, mw + 40, 40, C.a);
+      fillRect(mx + mw - 60, my - 60, 30, 40, C.a);
+      // Door
+      fillRect(mx + mw/2 - 25, my + mh - 80, 50, 80, C.t);
+      fillRect(mx + mw/2 - 20, my + mh - 75, 40, 70, C.a);
+      fillRect(mx + mw/2 - 15, my + mh - 30, 5, 5, C.g);
+      // Windows
+      for (let i = 0; i < 3; i++) {
+        const wx = mx + 30 + i * 100;
+        fillRect(wx, my + 40, 50, 60, C.n);
+        fillRect(wx + 5, my + 45, 18, 25, C.l);
+        fillRect(wx + 27, my + 45, 18, 25, C.l);
+        fillRect(wx + 5, my + 72, 18, 25, C.l);
+        fillRect(wx + 27, my + 72, 18, 25, C.l);
+      }
+      // Trees
+      for (let i = 0; i < 3; i++) drawSprite(SP.tree, 50 + i * 350, H - 350, 5);
+      fillRect(mx + mw/2 - 40, my + mh, 80, 50, C.q);
+      fillRect(0, H - 100, W, 100, C.v);
+      fillRect(0, H - 100, W, 15, C.d);
+      break;
+    }
+    case 'london': {
+      fillRect(0, 0, W, H - 100, C.z);
+      const buildings = [
+        {x: 0, w: 80, h: 250, c: C.t}, {x: 80, w: 100, h: 300, c: C.a},
+        {x: 180, w: 90, h: 280, c: C.j}, {x: 270, w: 110, h: 350, c: C.t},
+        {x: 380, w: 80, h: 220, c: C.j}, {x: 460, w: 100, h: 320, c: C.a},
+        {x: 560, w: 90, h: 260, c: C.t}, {x: 650, w: 80, h: 300, c: C.j},
+        {x: 730, w: 70, h: 240, c: C.t}
+      ];
+      for (const b of buildings) {
+        const by = H - 100 - b.h;
+        fillRect(b.x, by, b.w, b.h, b.c);
+        for (let wy = 0; wy < b.h - 40; wy += 40) {
+          for (let wx = 10; wx < b.w - 15; wx += 25) {
+            if ((wy + wx + b.x) % 80 < 60) fillRect(b.x + wx, by + 20 + wy, 12, 18, C.y);
+          }
+        }
+      }
+      fillRect(0, H - 100, W, 100, C.o);
+      fillRect(0, H - 60, W, 5, C.y);
+      break;
+    }
+    case 'ballroom': {
+      fillRect(0, 0, W, H - 150, C.c);
+      for (let y = 0; y < H - 150; y += 20) {
+        for (let x = 0; x < W; x += 20) fillRect(x, y, 10, 10, C.g);
+      }
+      for (let y = H - 150; y < H; y += 30) {
+        for (let x = 0; x < W; x += 30) {
+          fillRect(x, y, 15, 15, ((x + y) / 30) % 2 === 0 ? C.t : C.a);
+        }
+      }
+      // Chandelier
+      fillRect(W/2 - 30, 30, 60, 5, C.g);
+      for (let i = 0; i < 6; i++) {
+        const lx = W/2 - 25 + i * 10;
+        fillRect(lx, 35, 4, 25, C.g);
+        if ((frame + i * 8) % 30 < 20) fillRect(lx, 60, 4, 4, C.y);
+      }
+      fillRect(W/2 - 2, 0, 4, 30, C.g);
+      break;
+    }
+    case 'garden': {
+      fillRect(0, 0, W, H - 150, C.z);
+      fillRect(50, 40, 40, 40, C.g);
+      fillRect(60, 30, 20, 60, C.g);
+      fillRect(40, 50, 60, 20, C.g);
+      fillRect(0, H - 250, W, 80, C.d);
+      fillRect(0, H - 250, W, 15, C.v);
+      for (let i = 0; i < 3; i++) {
+        const tx = 100 + i * 300;
+        fillRect(tx, H - 350, 80, 30, C.d);
+        fillRect(tx - 5, H - 320, 90, 50, C.v);
+        fillRect(tx + 30, H - 270, 20, 30, C.t);
+      }
+      fillRect(0, H - 150, W, 150, C.c);
+      for (let i = 0; i < 15; i++) {
+        const fx = (i * 67) % W;
+        const fy = H - 130 + (i * 13) % 30;
+        const colors = [C.F, C.p, C.m, C.y, C.r];
+        fillRect(fx, fy, 8, 8, colors[i % 5]);
+        fillRect(fx + 3, fy + 8, 2, 6, C.d);
+      }
+      break;
+    }
+    case 'storm': {
+      fillRect(0, 0, W, H, '#202040');
+      fillRect(0, 0, W, H/3, '#101030');
+      if (frame % 50 < 3) {
+        fillRect(W/2 - 5, 0, 10, 100, C.w);
+        fillRect(W/2 - 20, 100, 40, 50, C.w);
+        fillRect(W/2 - 30, 150, 60, 30, C.w);
+      }
+      for (let i = 0; i < 100; i++) {
+        const rx = (i * 37 + frame * 8) % W;
+        const ry = (i * 71 + frame * 15) % H;
+        fillRect(rx, ry, 2, 8, C.l);
+      }
+      fillRect(250, 250, 300, 250, C.u);
+      fillRect(230, 230, 340, 20, C.k);
+      fillRect(0, H - 50, W, 50, C.k);
+      break;
+    }
+    case 'wedding': {
+      fillRect(0, 0, W, H - 100, C.z);
+      fillRect(0, 0, W, H/2, C.l);
+      fillRect(W/2 - 60, 80, 120, 120, C.g);
+      fillRect(W/2 - 200, 200, 400, 250, C.c);
+      fillRect(W/2 - 30, 100, 60, 100, C.c);
+      fillRect(W/2 - 40, 90, 80, 20, C.a);
+      fillRect(W/2 - 50, 350, 100, 100, C.t);
+      fillRect(W/2 - 30, 220, 60, 60, C.m);
+      fillRect(W/2 - 20, 230, 40, 40, C.p);
+      for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        const cx = W/2 + Math.cos(angle) * 12;
+        const cy = 250 + Math.sin(angle) * 12;
+        fillRect(Math.floor(cx), Math.floor(cy), 6, 6, C.y);
+      }
+      fillRect(0, H - 100, W, 100, C.v);
+      for (let i = 0; i < 30; i++) {
+        const fx = (i * 47) % W;
+        const fy = H - 90 + (i * 17) % 20;
+        const colors = [C.F, C.p, C.m, C.y];
+        fillRect(fx, fy, 6, 6, colors[i % 4]);
+      }
+      break;
+    }
+  }
+}
+
+function drawHUD() {
+  fillRect(0, 0, W, 50, C.k);
+  fillRect(0, 50, W, 4, C.w);
+  drawText('LOVE', 20, 18, C.w, 1, 'left', false);
+  for (let i = 0; i < 5; i++) {
+    if (i < stats.hearts) drawSprite(SP.heart, 100 + i * 25, 8, 1);
+    else fillRect(100 + i * 25, 8, 18, 18, C.u);
+  }
+  drawText('GOLD', 250, 18, C.g, 1, 'left', false);
+  drawText('£' + (stats.gold * 1000), 320, 18, C.g, 1, 'left', false);
+  drawText('REP', 470, 18, C.l, 1, 'left', false);
+  for (let i = 0; i < 5; i++) {
+    fillRect(530 + i * 18, 10, 14, 20, i < stats.reputation ? C.B : C.u);
+  }
+  drawText('WIT', 640, 18, C.m, 1, 'left', false);
+  drawText(stats.wit.toString(), 700, 18, C.m, 1, 'left', false);
+}
+
+function drawDialogue(scene) {
+  if (!scene || (!scene.speaker && !scene.text)) return;
+  const boxH = 200;
+  const boxY = H - boxH;
+  fillRect(0, boxY, W, boxH, C.k);
+  fillRect(0, boxY, W, 4, C.w);
+  fillRect(0, boxY + boxH - 4, W, 4, C.w);
+  fillRect(0, boxY, 4, boxH, C.w);
+  fillRect(W - 4, boxY, 4, boxH, C.w);
+  if (scene.speaker) {
+    fillRect(20, boxY - 25, 300, 35, C.w);
+    fillRect(25, boxY - 20, 290, 25, C.k);
+    drawText(scene.speaker, 30, boxY - 13, C.g, 1, 'left', false);
+  }
+  const lines = wrapText(displayText, 50);
+  const lineH = 24;
+  const maxLines = Math.floor((boxH - 30) / lineH);
+  const startLine = Math.max(0, lines.length - maxLines);
+  for (let i = startLine; i < lines.length; i++) {
+    drawText(lines[i], 30, boxY + 20 + (i - startLine) * lineH, C.w, 1, 'left', false);
+  }
+  if (textIdx >= fullText.length) {
+    if (Math.floor(frame / 30) % 2 === 0) {
+      drawText('PRESS SPACE', W - 220, boxY + boxH - 30, C.g, 1, 'left', false);
+    }
+  }
+}
+
+function drawCharacter(charName) {
+  if (!charName || !SP[charName]) return;
+  const sprite = SP[charName];
+  const maxW = Math.max(...sprite.map(r => r.length));
+  const x = (W - maxW * 4) / 2;
+  // Slight idle animation
+  const y = 230 + Math.sin(frame * 0.05) * 1;
+  drawSprite(sprite, x, y, 4);
+}
+
+function drawTitle() {
+  const y = 80 + Math.sin(frame * 0.04) * 5;
+  drawText('CECILIA', W/2, y, C.g, 6, 'center');
+  drawText('A MARRIAGE QUEST', W/2, 170, C.w, 3, 'center');
+  drawText('After the novel by Frances Burney', W/2, 215, C.c, 1, 'center');
+  const ceciliaY = 270 + Math.sin(frame * 0.06) * 4;
+  drawSprite(SP.cecilia, W/2 - 32, ceciliaY, 4);
+  for (let i = 0; i < 3; i++) {
+    const angle = frame * 0.03 + (i * 2 * Math.PI / 3);
+    const hx = W/2 + Math.cos(angle) * 80;
+    const hy = 350 + Math.sin(angle) * 20;
+    drawSprite(SP.heart, Math.floor(hx), Math.floor(hy), 1);
+  }
+  if (Math.floor(frame / 30) % 2 === 0) {
+    drawText('PRESS SPACE TO START', W/2, 460, C.y, 2, 'center');
+  }
+  drawText('A retro adventure in 8-bit', W/2, 540, C.c, 1, 'center');
+}
+
+function drawChoices(choices) {
+  if (!choices || textIdx < fullText.length) return;
+  const startY = 430;
+  for (let i = 0; i < choices.length; i++) {
+    const cy = startY + i * 35;
+    const selected = i === choiceIdx;
+    if (selected) {
+      fillRect(80, cy - 5, 640, 30, C.n);
+      fillRect(85, cy, 630, 20, C.B);
+    } else {
+      fillRect(80, cy - 5, 640, 30, C.k);
+      fillRect(85, cy, 630, 20, C.u);
+    }
+    if (selected) drawText('►', 95, cy + 5, C.y, 1, 'left', false);
+    drawText(choices[i].text, 115, cy + 8, selected ? C.w : C.c, 1, 'left', false);
+  }
+}
+
+function drawMinigame() {
+  fillRect(0, 0, W, H, C.z);
+  // Parallax clouds
+  ctx.save();
+  ctx.translate(-mg.scrollX * 0.3, 0);
+  for (let i = 0; i < 8; i++) {
+    drawSprite(SP.cloud, i * 400 + 50, 30 + (i % 3) * 50, 3);
+  }
+  ctx.restore();
+  // Hills
+  ctx.save();
+  ctx.translate(-mg.scrollX * 0.5, 0);
+  for (let i = 0; i < 20; i++) {
+    fillRect(i * 200, 350, 150, 50, C.v);
+    fillRect(i * 200, 340, 150, 15, C.d);
+  }
+  ctx.restore();
+  // World
+  ctx.save();
+  ctx.translate(-mg.scrollX, 0);
+  fillRect(0, 410, 6000, 190, C.q);
+  fillRect(0, 410, 6000, 20, C.v);
+  for (let x = 0; x < 6000; x += 60) {
+    fillRect(x, 440, 60, 4, C.j);
+    fillRect(x + 30, 460, 30, 4, C.j);
+  }
+  // Collectibles
+  for (const c of mg.collectibles) {
+    if (c.collected) continue;
+    const bob = Math.sin(mg.levelTime * 0.1 + c.x) * 3;
+    if (c.type === 'heart') {
+      drawSprite(SP.heart, c.x, c.y + bob, 1);
+    } else if (c.type === 'coin') {
+      const w = (Math.floor(mg.levelTime / 8 + c.x) % 4);
+      const cw = w < 2 ? 16 : 6;
+      fillRect(c.x, c.y + bob, cw, 18, C.g);
+      fillRect(c.x + 2, c.y + bob + 2, cw - 4, 14, C.y);
+    }
+  }
+  // Obstacles
+  for (const obs of mg.obstacles) {
+    if (obs.hit) continue;
+    const bob = Math.sin(mg.levelTime * 0.1 + obs.x) * 4;
+    drawSprite(SP.scandal, obs.x, obs.y + bob, 3);
+  }
+  // Player
+  const px = Math.floor(mg.player.x);
+  const py = Math.floor(mg.player.y);
+  if (mg.player.onGround && Math.abs(mg.player.vx) > 0.5) {
+    drawSprite(SP.cecilia, px, py + Math.sin(mg.levelTime * 0.3) * 1, 3);
+  } else {
+    drawSprite(SP.cecilia, px, py, 3);
+  }
+  // End flag
+  fillRect(mg.endX, 200, 6, 210, C.L);
+  fillRect(mg.endX + 6, 210, 60, 40, C.F);
+  drawText('END', mg.endX + 12, 220, C.w, 1, 'left', false);
+  ctx.restore();
+  // UI
+  drawText('HP', 20, 60, C.w, 1, 'left', false);
+  for (let i = 0; i < 5; i++) {
+    if (i < stats.reputation) drawSprite(SP.heart, 50 + i * 25, 55, 1);
+    else fillRect(50 + i * 25, 55, 18, 18, C.u);
+  }
+  drawText('SCORE', 20, 100, C.w, 1, 'left', false);
+  const score = stats.hearts * 100 + stats.gold * 50 + stats.reputation * 25;
+  drawText(score.toString(), 100, 100, C.g, 1, 'left', false);
+  fillRect(W - 280, 60, 250, 25, C.k);
+  fillRect(W - 278, 62, 246, 21, C.u);
+  const progress = Math.min(mg.player.x / mg.endX, 1);
+  fillRect(W - 278, 62, 246 * progress, 21, C.v);
+  drawText('PROGRESS', W - 275, 65, C.w, 1, 'left', false);
+  // Controls hint
+  drawText('ARROWS: MOVE   SPACE: JUMP', W/2, H - 25, C.c, 1, 'center');
+}
+
+// === UPDATE ===
+function update() {
+  frame++;
+  if (state === 'title') {
+    if (keyPressed('Space') || keyPressed('Enter')) {
+      playSound('select');
+      state = 'scene';
+      currentSceneIdx = 1;
+      setupScene();
+    }
+  } else if (state === 'scene') {
+    if (textIdx < fullText.length) {
+      textTimer++;
+      if (textTimer % 1 === 0) {
+        textIdx++;
+        displayText = fullText.substring(0, textIdx);
+        if (textIdx % 3 === 0) playSound('type');
+      }
+    } else {
+      if (currentScene.choices) {
+        if (keyPressed('ArrowUp')) { choiceIdx = (choiceIdx - 1 + currentScene.choices.length) % currentScene.choices.length; playSound('select'); }
+        if (keyPressed('ArrowDown')) { choiceIdx = (choiceIdx + 1) % currentScene.choices.length; playSound('select'); }
+        if (keyPressed('Space') || keyPressed('Enter')) {
+          const choice = currentScene.choices[choiceIdx];
+          if (choice.effect) choice.effect();
+          playSound('select');
+          currentSceneIdx++;
+          if (currentSceneIdx < SCENES.length) setupScene();
+        }
+      } else {
+        if (keyPressed('Space') || keyPressed('Enter')) {
+          if (currentScene.onContinue) currentScene.onContinue();
+          else { currentSceneIdx++; if (currentSceneIdx < SCENES.length) setupScene(); }
+        }
+      }
+    }
+  } else if (state === 'minigame') {
+    updateMinigame();
+    if (mg.finished) {
+      if (keyPressed('Space') || keyPressed('Enter')) {
+        state = 'scene';
+        currentSceneIdx = 9;
+        setupScene();
+      }
+    }
+  } else if (state === 'ending') {
+    if (textIdx < fullText.length) {
+      textTimer++;
+      if (textTimer % 1 === 0) {
+        textIdx++;
+        displayText = fullText.substring(0, textIdx);
+        if (textIdx % 3 === 0) playSound('type');
+      }
+    } else {
+      if (keyPressed('Space') || keyPressed('Enter')) {
+        resetGame();
+        state = 'title';
+      }
+    }
+  }
+}
+
+// === DRAW ===
+function draw() {
+  fillRect(0, 0, W, H, C.k);
+  if (state === 'title') {
+    drawBackground('title');
+    drawTitle();
+  } else if (state === 'scene') {
+    drawBackground(currentScene.bg);
+    if (currentScene.character) drawCharacter(currentScene.character);
+    drawHUD();
+    drawDialogue(currentScene);
+    if (currentScene.choices) drawChoices(currentScene.choices);
+  } else if (state === 'minigame') {
+    drawMinigame();
+    if (mg.finished) {
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(0, 0, W, H);
+      drawText('SAFETY REACHED!', W/2, 220, C.g, 4, 'center');
+      drawText('Press SPACE to continue', W/2, 320, C.w, 2, 'center');
+    }
+  } else if (state === 'ending') {
+    drawBackground(currentScene.bg);
+    drawHUD();
+    // Title of ending
+    if (currentScene.title) {
+      fillRect(0, 60, W, 60, C.k);
+      drawText(currentScene.title, W/2, 75, C.g, 3, 'center');
+    }
+    // Dialogue box for ending text
+    const boxH = 280;
+    const boxY = H - boxH - 20;
+    fillRect(0, boxY, W, boxH, C.k);
+    fillRect(0, boxY, W, 4, C.w);
+    fillRect(0, boxY + boxH - 4, W, 4, C.w);
+    fillRect(0, boxY, 4, boxH, C.w);
+    fillRect(W - 4, boxY, 4, boxH, C.w);
+    const lines = wrapText(displayText, 55);
+    const lineH = 26;
+    const maxLines = Math.floor((boxH - 30) / lineH);
+    const startLine = Math.max(0, lines.length - maxLines);
+    for (let i = startLine; i < lines.length; i++) {
+      drawText(lines[i], 30, boxY + 20 + (i - startLine) * lineH, C.w, 1, 'left', false);
+    }
+    if (textIdx >= fullText.length) {
+      if (Math.floor(frame / 30) % 2 === 0) {
+        drawText('PRESS SPACE TO RESTART', W/2, H - 30, C.g, 2, 'center');
+      }
+    }
+  }
+  // CRT scanline overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  for (let y = 0; y < H; y += 4) {
+    ctx.fillRect(0, y, W, 2);
+  }
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+</script>
+</body>
+</html>
+

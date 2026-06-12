@@ -1,0 +1,63 @@
+CECILIA GAME REDESIGN — BRAINSTORMING NOTES
+Saved: June 11, 2026
+Game file: C:\Users\hhavens1\OneDrive - University of Tennessee\Desktop\cecilia.html
+
+Single-file HTML5 canvas game (~1140 lines). NES-style pixel art, Press Start 2P
+font, retro TV frame aesthetic. Based on Frances Burney's novel "Cecilia."
+
+Approved overall direction: Approach B — Full Redesign.
+
+=====================================================================
+SECTION 1 — RESPONSIVE CANVAS (approved)
+=====================================================================
+- Canvas resizes to window.innerWidth x window.innerHeight on load and resize.
+- All sizing constants (SCALE, FONT_BASE, BOX_H, CHAR_SCALE) derive from live
+  canvas dimensions.
+- HUD = ~8% of canvas height; dialogue box = ~32% of canvas height.
+- Sprites scale to ~5% of canvas height.
+- Text sizes computed as fractions of canvas width.
+
+=====================================================================
+SECTION 2 — SCENE DATA ARCHITECTURE (approved)
+=====================================================================
+- A scene's "text" field becomes either a string OR a function of game state:
+    text: (gs) => gs.flags.x ? "..." : "..."
+- "choices" entries get an optional condition: (gs) => bool to show/hide them.
+- "effect" receives the full game state object instead of closing over globals.
+- New "flags" object on game state for named story decisions.
+- Scenes whose "condition" returns false are skipped automatically.
+
+=====================================================================
+SECTION 3 — NEW STORY CONTENT (approved)
+=====================================================================
+Act 1 additions (before the minigame):
+  1. Harrel scene 1 — Cecilia arrives at the Harrel household; hints at debt.
+     Sets flags.sympathizedWithHarrel; affects gold.
+  2. Floyer scene — clumsy pursuit. Sets flags.encouragedFloyer; affects
+     suitors.floyer.
+  3. Arnott scene — shy admirer. Sets flags.kindToArnott; affects
+     suitors.arnott.
+  4. Albany scene — philanthropist moral challenge; affects wit + reputation.
+  5. Harrel scene 2 — crisis/pressure for money. flags.gaveMoneyToHarrel
+     shapes the type of scandal that follows.
+
+Act 2 additions (after the minigame):
+  6. Mrs. Delvile confrontation — the name-condition speech; conditional text
+     based on prior warmth toward her.
+  7. Mortimer's private confession — secret marriage proposal. Sets
+     flags.agreedSecretMarriage.
+  8. Cecilia's breaking point — triggers only if reputation <= 2 OR
+     hearts === 0; drawn from the novel's madness scene.
+
+Existing scenes (Briggs, Mrs. Delvile intro, Monckton, Delvile garden) get
+conditional text variants based on flags.
+
+=====================================================================
+STILL TO DESIGN (resume next session)
+=====================================================================
+- Section 4: Stats & Endings gating — which stats / suitor scores unlock
+  which endings.
+- Section 5: Dialogue box layout specifics (concept covered in Section 1,
+  details still needed).
+- Then: write the full design doc, self-review, user review, and move on to
+  an implementation plan.
