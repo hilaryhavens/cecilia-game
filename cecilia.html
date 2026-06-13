@@ -497,9 +497,9 @@ const SCENES = [
     text: "What? make it over to a scoundrel? no, no, won't suffer it; sha'n't be, sha'n't be - don't marry proper! I'll have a care whom ye choose!'",
     character: 'briggs',
     choices: [
-      { text: "'Sir, I shall choose with wisdom.'", effect: () => { stats.wit += 1; } },
-      { text: "'Sir, I shall consult you on all matters.'", effect: () => { stats.gold += 1; } },
-      { text: "'Sir, I am mistress of my own fate!'", effect: () => { stats.reputation += 1; } }
+      { text: "'Sir, I shall choose with wisdom.'", effect: (gs) => { gs.stats.virtue += 1; } },
+      { text: "'Sir, I shall consult you on all matters.'", effect: (gs) => { gs.stats.gold += 1; } },
+      { text: "'Sir, I am mistress of my own fate!'", effect: (gs) => { gs.stats.hearts += 0; } }
     ]
   },
   {
@@ -507,9 +507,9 @@ const SCENES = [
     text: "'Dear Miss Beverley! How delightful! Pray allow me to introduce my son, Mortimer - and our family friend, Mr. Monckton.'",
     character: 'mrsdelvile',
     choices: [
-      { text: "Greet Mortimer Delvile warmly.", effect: () => { suitors.delvile += 1; } },
-      { text: "Engage instead Mr. Monckton in conversation.", effect: () => { suitors.monckton += 1; } },
-      { text: "Thank her politely but keep distance.", effect: () => { stats.reputation += 1; } }
+      { text: "Greet Mortimer Delvile warmly.", effect: (gs) => { gs.suitors.delvile += 1; } },
+      { text: "Engage instead Mr. Monckton in conversation.", effect: (gs) => { gs.suitors.monckton += 1; } },
+      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue += 1; } }
     ]
   },
   {
@@ -517,9 +517,9 @@ const SCENES = [
     text: "'My dear Miss Beverley, I confess I am most eager to be of service. Your late uncle trusted me implicitly - perhaps we might discuss... arrangements?'",
     character: 'monckton',
     choices: [
-      { text: "'How kind. Tell me more.'", effect: () => { suitors.monckton += 1; stats.reputation -= 1; } },
-      { text: "'Sir, I am not for sale!'", effect: () => { stats.reputation += 1; suitors.monckton -= 1; } },
-      { text: "'Sir, your concern is noted.'", effect: () => {} }
+      { text: "'How kind. Tell me more.'", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; } },
+      { text: "'Sir, I am not for sale!'", effect: (gs) => { gs.stats.virtue += 1; gs.suitors.monckton -= 1; } },
+      { text: "'Sir, your concern is noted.'", effect: (gs) => {} }
     ]
   },
   {
@@ -527,9 +527,9 @@ const SCENES = [
     text: "'Miss Beverley, I must be honest with you. I love you - but my family name is precious to me. I cannot take yours. Yet I cannot bear to see you sacrificed to mercenary schemes.'",
     character: 'delvile',
     choices: [
-      { text: "'Mortimer, your honesty moves me deeply.'", effect: () => { suitors.delvile += 2; } },
-      { text: "'I am honored by your regard.'", effect: () => { suitors.delvile += 1; } },
-      { text: "'Then we are at an impasse.'", effect: () => {} }
+      { text: "'Mortimer, your honesty moves me deeply.'", effect: (gs) => { gs.suitors.delvile += 2; gs.stats.hearts += 1; } },
+      { text: "'I am honored by your regard.'", effect: (gs) => { gs.suitors.delvile += 1; } },
+      { text: "'Then we are at an impasse.'", effect: (gs) => {} }
     ]
   },
   {
@@ -742,7 +742,7 @@ function updateMinigame() {
     if (mg.player.x + 25 > obs.x && mg.player.x < obs.x + obs.w &&
         mg.player.y + 55 > obs.y && mg.player.y < obs.y + obs.h) {
       obs.hit = true;
-      stats.reputation = Math.max(0, stats.reputation - 1);
+      stats.virtue = Math.max(0, stats.virtue - 1);
       mg.player.vy = -7;
       mg.player.vx = -3;
       playSound('hurt');
@@ -941,7 +941,10 @@ function drawHUD() {
   }
   drawText('GOLD', 250, 18, C.g, 1, 'left', false);
   drawText('£' + (stats.gold * 1000), 320, 18, C.g, 1, 'left', false);
-  // VIRTUE meter added in Task 5 (interim: REP/WIT removed with the dropped stats)
+  drawText('VIRTUE', 470, 18, C.h, 1, 'left', false);
+  for (let i = 0; i < 6; i++) {
+    fillRect(560 + i * 16, 10, 12, 20, i < stats.virtue ? C.v : C.u);
+  }
 }
 
 function drawDialogue(scene) {
@@ -1078,14 +1081,13 @@ function drawMinigame() {
   drawText('END', mg.endX + 12, 220, C.w, 1, 'left', false);
   ctx.restore();
   // UI
-  drawText('HP', 20, 60, C.w, 1, 'left', false);
-  for (let i = 0; i < 5; i++) {
-    if (i < stats.reputation) drawSprite(SP.heart, 50 + i * 25, 55, 1);
-    else fillRect(50 + i * 25, 55, 18, 18, C.u);
+  drawText('VIRTUE', 20, 60, C.h, 1, 'left', false);
+  for (let i = 0; i < 6; i++) {
+    if (i < stats.virtue) fillRect(90 + i * 18, 55, 14, 18, C.v);
+    else fillRect(90 + i * 18, 55, 14, 18, C.u);
   }
-  drawText('SCORE', 20, 100, C.w, 1, 'left', false);
-  const score = stats.hearts * 100 + stats.gold * 50 + stats.reputation * 25;
-  drawText(score.toString(), 100, 100, C.g, 1, 'left', false);
+  drawText('GOLD', 20, 100, C.g, 1, 'left', false);
+  drawText('£' + (stats.gold * 1000), 90, 100, C.g, 1, 'left', false);
   fillRect(W - 280, 60, 250, 25, C.k);
   fillRect(W - 278, 62, 246, 21, C.u);
   const progress = Math.min(mg.player.x / mg.endX, 1);
