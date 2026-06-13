@@ -406,6 +406,7 @@ let textTimer = 0;
 let choiceIdx = 0;
 let currentScene = null;
 let currentEndingType = null;
+let mgReturnIdx = 0;
 
 let stats = { hearts: 0, gold: 10, virtue: 3 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
@@ -582,44 +583,93 @@ const SCENES = [
   {
     bg: 'storm', speaker: '',
     text: "Suddenly, scandal strikes! Wild rumors spread through London - tales of Cecilia's fortune, her family, her virtue! She must flee the city to escape the wagging tongues!",
-    onContinue: () => { state = 'minigame'; initMinigame(); }
+    onContinue: () => { mgReturnIdx = currentSceneIdx + 1; state = 'minigame'; initMinigame(); }
   },
-  {
-    bg: 'manor', speaker: '',
-    text: "Cecilia has reached the safety of the country estate! With time to reflect, she must now decide her future...",
-    onContinue: () => { currentSceneIdx = 10; setupScene(); }
-  },
-  {
-    bg: 'manor', speaker: '',
-    text: "What path shall Cecilia choose? Her heart, her fortune, her freedom - all hang in the balance.",
+  { // index after minigame (mgReturnIdx): Mrs. Delvile confrontation (name condition)
+    bg: 'ballroom', speaker: 'MRS. DELVILE',
+    text: (gs) => gs.suitors.delvile >= 2
+      ? "'Miss Beverley, my son loves you. But the name of Delvile must never die. Could you ask him to bury it?'"
+      : "'Miss Beverley. I will be plain. There can be no union that costs my family its name.'",
+    character: 'mrsdelvile',
     choices: [
-      { text: "Marry Mr. Delvile for true love.", effect: () => { chooseEnding('delvile'); } },
-      { text: "Remain independent and unmarried.", effect: () => { chooseEnding('independence'); } },
-      { text: "Marry Mr. Arnott for security.", effect: () => { chooseEnding('arnott'); } },
-      { text: "Trust Mr. Monckton after all.", effect: () => { chooseEnding('monckton'); } }
+      { text: "'I would never ask him to dishonour his name.'", effect: (gs) => { gs.flags.mrsDelvileApproval = true; gs.stats.virtue += 1; } },
+      { text: "'Then your son must choose between us.'", effect: (gs) => { gs.flags.mrsDelvileApproval = false; } }
+    ]
+  },
+  { // Mortimer's private confession
+    bg: 'garden', speaker: 'MR. DELVILE',
+    text: "'Cecilia - marry me in secret. Let no name, no fortune, no mother stand between us. Only say yes.'",
+    character: 'delvile',
+    condition: (gs) => gs.suitors.delvile >= 1,
+    choices: [
+      { text: "'Yes. I will be yours, whatever the cost.'", effect: (gs) => { gs.flags.agreedSecretMarriage = true; gs.stats.hearts += 1; } },
+      { text: "'Not in secret. I will not begin in shame.'", effect: (gs) => { gs.stats.virtue += 1; } }
+    ]
+  },
+  { // Stage gate: breaking-point -> chase, else -> wish menu. Routes on continue.
+    bg: 'storm', speaker: '',
+    text: "Cecilia returns to London, her heart and fortune alike in peril...",
+    onContinue: () => {
+      if (shouldBreakDown(gameState())) { state = 'chase'; initChase(); }
+      else { currentSceneIdx++; setupScene(); }
+    }
+  },
+  { // Stage 2 wish menu (only reached if she did not break)
+    bg: 'manor', speaker: '',
+    text: "What does Cecilia wish for, in her heart of hearts?",
+    choices: [
+      { text: "To marry Mortimer Delvile for love.", effect: (gs) => { chooseEnding(resolveWish('delvile', gs)); } },
+      { text: "To remain independent and free.", effect: (gs) => { chooseEnding(resolveWish('independence', gs)); } },
+      { text: "To accept Mr. Arnott's steady devotion.", effect: (gs) => { chooseEnding(resolveWish('arnott', gs)); } },
+      { text: "To trust Mr. Monckton at last.", effect: (gs) => { chooseEnding(resolveWish('monckton', gs)); } }
     ]
   }
 ];
 
 const ENDINGS = {
-  delvile: {
-    title: "TRUE LOVE TRIUMPHS!",
-    text: "Mr. Delvile, though he could not take your name, received approval from his mother Mrs. Delvile. You marry Mortimer - and though the family name is not yours and you lose your fortune, your love is real and true.\n\nLike Cecilia herself, you found that love can transcend mere convention.\n\nTHE END",
+  survival: {
+    title: "SHE LIVES",
+    text: "The fever breaks. Mortimer is at her side; Mrs. Delvile, softened at last, gives her blessing. They marry - poorer, plainer, but together. The Beverley fortune is gone to the name condition, yet Cecilia wakes to a quiet, living happiness.\n\nTHE END",
     bg: 'wedding'
   },
-  independence: {
-    title: "INDEPENDENCE!",
-    text: "With fortune secured and reputation intact, you choose not to marry at all. You become a celebrated hostess in London, independent and free - exactly as Cecilia herself chose in the novel's most poignant possibility.\n\nThe world may whisper, but you are YOURSELF.\n\nTHE END",
+  death: {
+    title: "THE END OF ALL",
+    text: "No one reaches her in time. Cecilia is carried off raving, and the world that prized her fortune forgets her name. She does not recover.\n\nA warning, Burney tells us, of what society does to the unguarded heart.\n\nTHE END",
+    bg: 'storm'
+  },
+  true_love: {
+    title: "TRUE LOVE TRIUMPHS",
+    text: "With Mrs. Delvile's blessing and Mortimer's steadfast heart, you marry for love. The fortune is forfeit to the name condition - but love, freely chosen, is the truer inheritance.\n\nTHE END",
+    bg: 'wedding'
+  },
+  name_condition: {
+    title: "THE NAME CONDITION",
+    text: "Mortimer loves you, but the Delvile name cannot bend, and his family will not relent. You part - fortuneless and estranged - each the other's might-have-been.\n\nTHE END",
     bg: 'garden'
   },
-  arnott: {
-    title: "A FORTUNE MARRIED!",
-    text: "Mr. Arnott, despite his foolishness, takes your name. He loves you, you are comfortable, and though you cannot return his affection, you are safe from Mr. Monckton's schemes. You shall be Mrs. Beverley and rich, though not happy.\n\nTHE END",
+  independence: {
+    title: "INDEPENDENCE",
+    text: "Fortune kept and conscience clear, you marry no one. You become a celebrated London hostess, generous and free - the most modern of all Cecilia's possible lives.\n\nTHE END",
     bg: 'ballroom'
   },
-  monckton: {
-    title: "RUIN!",
-    text: "Mr. Monckton's schemes are revealed, but too late. Your reputation is shattered, your fortune lost. Mr. Eggleston claims all. You are left with nothing but regret - a warning to all who would trust a schemer over their own heart.\n\nTHE END",
+  faded: {
+    title: "FADED",
+    text: "You keep your freedom, but not your means. The invitations thin, the rooms grow cold, and independence curdles quietly into solitude.\n\nTHE END",
+    bg: 'manor'
+  },
+  fortune_married: {
+    title: "A FORTUNE MARRIED",
+    text: "Gentle Mr. Arnott takes your name and keeps you safe and comfortable. You cannot love him as he loves you - but you are spared every schemer's reach. A calm life, if not a glad one.\n\nTHE END",
+    bg: 'ballroom'
+  },
+  quiet_spinster: {
+    title: "A QUIET LIFE",
+    text: "Mr. Arnott never finds the courage to ask. You live unmarried and of modest means - untroubled, unremarkable, and wholly your own.\n\nTHE END",
+    bg: 'garden'
+  },
+  ruin: {
+    title: "RUIN",
+    text: "Mr. Monckton's long scheme closes over you. Fortune and good name are swept away together, and Mr. Eggleston claims the rest. Nothing is left but the lesson.\n\nTHE END",
     bg: 'storm'
   }
 };
@@ -1163,7 +1213,7 @@ function update() {
     if (mg.finished) {
       if (keyPressed('Space') || keyPressed('Enter')) {
         state = 'scene';
-        currentSceneIdx = 9;
+        currentSceneIdx = mgReturnIdx;
         setupScene();
       }
     }
@@ -1251,6 +1301,7 @@ window.Cecilia = {
   blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, chaseDifficulty,
   resolveSceneText, visibleChoices, gameState,
   giveTo(kind) { return applyGift(gameState(), kind); },
+  endingKeys: Object.keys(ENDINGS),
   get live() { return { stats, suitors, flags, state, currentSceneIdx }; }
 };
 gameLoop();
