@@ -407,7 +407,7 @@ let choiceIdx = 0;
 let currentScene = null;
 let currentEndingType = null;
 
-let stats = { hearts: 0, gold: 10, virtue: 3 };
+let stats = { hearts: 0, gold: 10, virtue: 3, wit: 0, reputation: 0 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
 let flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
@@ -416,7 +416,7 @@ let mg = null;
 // === PURE DECISION LOGIC (no side effects; testable via window.Cecilia) ===
 function blankGS() {
   return {
-    stats:   { hearts: 0, gold: 10, virtue: 3 },
+    stats:   { hearts: 0, gold: 10, virtue: 3, wit: 0, reputation: 0 },
     suitors: { delvile: 0, monckton: 0, floyer: 0, arnott: 0 },
     flags:   { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
                sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false }
@@ -466,6 +466,16 @@ function chaseDifficulty(gs) {
   c += Math.min(s.gold, 12) * 0.03;
   return Math.max(0.5, c);
 }
+// Resolve a scene's text whether it's a string or a function of game state.
+function resolveSceneText(scene, gs) {
+  return (typeof scene.text === 'function') ? scene.text(gs) : (scene.text || '');
+}
+// Filter a scene's choices by optional condition(gs).
+function visibleChoices(scene, gs) {
+  if (!scene.choices) return null;
+  return scene.choices.filter(ch => !ch.condition || ch.condition(gs));
+}
+function gameState() { return { stats, suitors, flags }; }
 
 // === SCENE DATA ===
 const SCENES = [
@@ -578,15 +588,22 @@ function chooseEnding(type) {
 }
 function setupScene() {
   if (state === 'ending') return;
+  // Skip any scene whose condition(gs) is false.
+  while (currentSceneIdx < SCENES.length) {
+    const sc = SCENES[currentSceneIdx];
+    if (sc.condition && !sc.condition(gameState())) { currentSceneIdx++; continue; }
+    break;
+  }
+  if (currentSceneIdx >= SCENES.length) return;
   currentScene = SCENES[currentSceneIdx];
   if (currentScene.type === 'title') return;
-  fullText = currentScene.text;
+  fullText = resolveSceneText(currentScene, gameState());
   textIdx = 0;
   displayText = '';
   choiceIdx = 0;
 }
 function resetGame() {
-  stats = { hearts: 0, gold: 10, virtue: 3 };
+  stats = { hearts: 0, gold: 10, virtue: 3, wit: 0, reputation: 0 };
   suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
   flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
             sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
@@ -1102,20 +1119,21 @@ function update() {
         if (textIdx % 3 === 0) playSound('type');
       }
     } else {
-      if (currentScene.choices) {
-        if (keyPressed('ArrowUp')) { choiceIdx = (choiceIdx - 1 + currentScene.choices.length) % currentScene.choices.length; playSound('select'); }
-        if (keyPressed('ArrowDown')) { choiceIdx = (choiceIdx + 1) % currentScene.choices.length; playSound('select'); }
+      const vis = visibleChoices(currentScene, gameState());
+      if (vis && vis.length) {
+        if (keyPressed('ArrowUp')) { choiceIdx = (choiceIdx - 1 + vis.length) % vis.length; playSound('select'); }
+        if (keyPressed('ArrowDown')) { choiceIdx = (choiceIdx + 1) % vis.length; playSound('select'); }
         if (keyPressed('Space') || keyPressed('Enter')) {
-          const choice = currentScene.choices[choiceIdx];
-          if (choice.effect) choice.effect();
+          const choice = vis[choiceIdx];
+          if (choice.effect) choice.effect(gameState());
           playSound('select');
-          currentSceneIdx++;
-          if (currentSceneIdx < SCENES.length) setupScene();
+          if (currentScene.onContinue) currentScene.onContinue();
+          else { currentSceneIdx++; setupScene(); }
         }
       } else {
         if (keyPressed('Space') || keyPressed('Enter')) {
           if (currentScene.onContinue) currentScene.onContinue();
-          else { currentSceneIdx++; if (currentSceneIdx < SCENES.length) setupScene(); }
+          else { currentSceneIdx++; setupScene(); }
         }
       }
     }
@@ -1156,7 +1174,7 @@ function draw() {
     if (currentScene.character) drawCharacter(currentScene.character);
     drawHUD();
     drawDialogue(currentScene);
-    if (currentScene.choices) drawChoices(currentScene.choices);
+    if (currentScene.choices) drawChoices(visibleChoices(currentScene, gameState()));
   } else if (state === 'minigame') {
     drawMinigame();
     if (mg.finished) {
@@ -1210,6 +1228,7 @@ function gameLoop() {
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
   blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, chaseDifficulty,
+  resolveSceneText, visibleChoices, gameState,
   get live() { return { stats, suitors, flags, state, currentSceneIdx }; }
 };
 gameLoop();
