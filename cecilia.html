@@ -533,6 +533,53 @@ const SCENES = [
     ]
   },
   {
+    bg: 'manor', speaker: 'MR. HARREL',
+    text: "'Miss Beverley! You honour our house. Pay no mind to the duns at the door - a gentleman's expenses are merely... temporary embarrassments.'",
+    character: 'monckton',
+    choices: [
+      { text: "'I am sorry to hear of your troubles, sir.'", effect: (gs) => { gs.flags.sympathizedWithHarrel = true; gs.stats.virtue += 0; } },
+      { text: "'Perhaps economy would serve the household better.'", effect: (gs) => { gs.stats.virtue += 1; } }
+    ]
+  },
+  {
+    bg: 'ballroom', speaker: 'MR. FLOYER',
+    text: "'Miss Beverley - that is - I had meant to say - the weather, and your eyes, are both uncommonly fine today!' He treads upon your hem.",
+    character: 'briggs',
+    choices: [
+      { text: "Laugh kindly and encourage him.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; } },
+      { text: "Excuse yourself with civility.", effect: (gs) => { gs.stats.virtue += 1; } }
+    ]
+  },
+  {
+    bg: 'garden', speaker: 'MR. ARNOTT',
+    text: "Mr. Arnott can scarcely meet your eye. 'I ask nothing, Miss Beverley - only that you should never want for a friend who... who esteems you.'",
+    character: 'delvile',
+    choices: [
+      { text: "'You are the truest friend I have, Mr. Arnott.'", effect: (gs) => { gs.suitors.arnott += 1; gs.flags.kindToArnott = true; } },
+      { text: "Thank him gently and turn away.", effect: (gs) => {} }
+    ]
+  },
+  {
+    bg: 'london', speaker: 'OLD ALBANY',
+    text: "'You are rich, child. But riches are a trust, not a toy. Will you squander on flatterers, or relieve the wretched who have no voice?'",
+    character: 'monckton',
+    choices: [
+      { text: "'Teach me to do good with what I have.'", effect: (gs) => { gs.stats.virtue += 2; } },
+      { text: "'Charity is a private matter, sir.'", effect: (gs) => { gs.stats.virtue -= 1; } }
+    ]
+  },
+  {
+    bg: 'storm', speaker: 'MR. HARREL',
+    text: (gs) => gs.flags.sympathizedWithHarrel
+      ? "'You felt for me once - feel for me now! Three thousand pounds, or I am a ruined man this very night!'"
+      : "'I am desperate, Miss Beverley! Lend me three thousand pounds, or my blood is upon your hands!'",
+    character: 'monckton',
+    choices: [
+      { text: "Give him the money to quiet the scandal.", effect: (gs) => { gs.stats.gold -= 4; gs.stats.virtue -= 1; gs.flags.gaveMoneyToHarrel = true; } },
+      { text: "Refuse - his ruin is of his own making.", effect: (gs) => { gs.stats.virtue += 1; } }
+    ]
+  },
+  {
     bg: 'storm', speaker: '',
     text: "Suddenly, scandal strikes! Wild rumors spread through London - tales of Cecilia's fortune, her family, her virtue! She must flee the city to escape the wagging tongues!",
     onContinue: () => { state = 'minigame'; initMinigame(); }
