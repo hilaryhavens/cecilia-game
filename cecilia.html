@@ -1207,6 +1207,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 // === TEST SEAM: pure logic + a live-state view for browser-driven tests ===
+// Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
   blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, chaseDifficulty,
   get live() { return { stats, suitors, flags, state, currentSceneIdx }; }
