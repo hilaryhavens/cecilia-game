@@ -102,7 +102,7 @@ The player voices a wish; stats filter it:
 | Wish | Happy / primary variant (condition) | Alternate variant (else) |
 |---|---|---|
 | **Delvile** | **True Love** — marriage with family sanction; if `mrsDelvileApproval AND (suitors.delvile ≥ 4 OR flags.agreedSecretMarriage)`. Fortune still lost to the name condition. | **Name Condition** — they cannot marry without the family; an estranged, fortuneless parting (tragic) |
-| **Independence** | **Independence** — celebrated London hostess; if `gold ≥ 12 AND virtue ≥ 4` | **Faded** — independence curdles into isolation and dwindling means (tragic) |
+| **Independence** | **Independence** — celebrated London hostess; if `gold ≥ 11 AND virtue ≥ 4` | **Faded** — independence curdles into isolation and dwindling means (tragic) |
 | **Arnott (security)** | **A Fortune Married** — safe, comfortable, loveless ("meh"); if `suitors.arnott ≥ 2 OR flags.kindToArnott` | **Quiet Spinster** — he is too timid to offer; she lives unmarried, of modest means ("meh", **not** ruin) |
 | **Monckton** | *(none — he is the trap)* | **Ruin** — his scheme triumphs; fortune lost |
 
@@ -139,5 +139,10 @@ Conceptually covered by Section 1 (dialogue box ≈ 32% of canvas height; text a
 ---
 
 ## Open tuning notes
-- All threshold numbers (`virtue ≤ 2`, `gold ≤ 3`, `≥ 4`, `≥ 12`, `≥ 2`) are provisional and to be tuned once the full stat economy across Act 1 (incl. charity minigame), Act 2, and the chase is laid out, subject to the Ruin < 30% criterion.
 - The charity minigame and the chase both read/adjust the same three stats; tune them together so worthy play comfortably clears the qualifying thresholds and only Harrel/vice/Monckton play pushes toward the breaking-point and Ruin.
+
+## Final tuning (Task 10, 2026-06-13 — verified)
+Stat economy locked in; thresholds verified by a 5,000-run Monte-Carlo over the pure logic (`window.Cecilia`) plus reachability probes:
+- **Ruin = ~4.4%** of plausible playthroughs (well under the 30% criterion). Ruin's only source is the Monckton wish; the Arnott path resolves to Fortune-Married/Quiet-Spinster and the chase's Death is a separate tragic ending, neither counted as Ruin.
+- **Independence gold threshold lowered `12 → 11`.** `gold` starts at 10 and has **no income source** (the charity minigame only spends it), so `≥ 12` was unreachable and the Independence "good" ending could never fire (0/5000 in the sim). At `≥ 11` it is reachable solely via the prudent path — Briggs's "consult you" choice (`+1 gold → 11`), refusing Harrel, and giving nothing in the minigame — while any spending drops to Faded. Other thresholds left as-is (`virtue ≤ 2`, `gold ≤ 3`, `virtue ≥ 4`, `suitors.delvile ≥ 4`, `suitors.arnott ≥ 2`), all confirmed reachable.
+- Representative distribution (N=5000): survival ~47%, death ~23%, name_condition ~8.5%, faded ~7%, true_love ~5%, ruin ~4.4%, fortune_married ~3%, quiet_spinster ~1.6%.

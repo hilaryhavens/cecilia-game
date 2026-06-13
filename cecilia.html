@@ -440,7 +440,9 @@ function resolveWish(wish, gs) {
     case 'delvile':
       return (f.mrsDelvileApproval && (su.delvile >= 4 || f.agreedSecretMarriage)) ? 'true_love' : 'name_condition';
     case 'independence':
-      return (s.gold >= 12 && s.virtue >= 4) ? 'independence' : 'faded';
+      // gold tuned 12 -> 11: gold starts at 10 with no income source, so 12 was unreachable;
+      // 11 is attainable only via the prudent path (Briggs gold choice + never spending). See Task 10.
+      return (s.gold >= 11 && s.virtue >= 4) ? 'independence' : 'faded';
     case 'arnott':
       return (su.arnott >= 2 || f.kindToArnott) ? 'fortune_married' : 'quiet_spinster';
     case 'monckton':
