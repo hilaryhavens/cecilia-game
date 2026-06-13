@@ -407,7 +407,7 @@ let choiceIdx = 0;
 let currentScene = null;
 let currentEndingType = null;
 
-let stats = { hearts: 0, gold: 10, virtue: 3, wit: 0, reputation: 0 };
+let stats = { hearts: 0, gold: 10, virtue: 3 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
 let flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
@@ -416,7 +416,7 @@ let mg = null;
 // === PURE DECISION LOGIC (no side effects; testable via window.Cecilia) ===
 function blankGS() {
   return {
-    stats:   { hearts: 0, gold: 10, virtue: 3, wit: 0, reputation: 0 },
+    stats:   { hearts: 0, gold: 10, virtue: 3 },
     suitors: { delvile: 0, monckton: 0, floyer: 0, arnott: 0 },
     flags:   { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
                sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false }
@@ -603,7 +603,7 @@ function setupScene() {
   choiceIdx = 0;
 }
 function resetGame() {
-  stats = { hearts: 0, gold: 10, virtue: 3, wit: 0, reputation: 0 };
+  stats = { hearts: 0, gold: 10, virtue: 3 };
   suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
   flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
             sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
@@ -941,12 +941,7 @@ function drawHUD() {
   }
   drawText('GOLD', 250, 18, C.g, 1, 'left', false);
   drawText('£' + (stats.gold * 1000), 320, 18, C.g, 1, 'left', false);
-  drawText('REP', 470, 18, C.l, 1, 'left', false);
-  for (let i = 0; i < 5; i++) {
-    fillRect(530 + i * 18, 10, 14, 20, i < stats.reputation ? C.B : C.u);
-  }
-  drawText('WIT', 640, 18, C.m, 1, 'left', false);
-  drawText(stats.wit.toString(), 700, 18, C.m, 1, 'left', false);
+  // VIRTUE meter added in Task 5 (interim: REP/WIT removed with the dropped stats)
 }
 
 function drawDialogue(scene) {
