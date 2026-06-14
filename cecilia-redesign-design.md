@@ -141,6 +141,11 @@ Conceptually covered by Section 1 (dialogue box ≈ 32% of canvas height; text a
 ## Open tuning notes
 - The charity minigame and the chase both read/adjust the same three stats; tune them together so worthy play comfortably clears the qualifying thresholds and only Harrel/vice/Monckton play pushes toward the breaking-point and Ruin.
 
+## Charity realism + economy in pounds (2026-06-13, post-launch — verified)
+The charity minigame now labels every figure explicitly so players know the right answer: a green **WORTHY** banner with the recipient's name (POOR FAMILY, THE HILLS, A BEGGAR, HOSPITAL) and "GIVE £25", versus a red **SPENDTHRIFT** banner (MR. HARREL, GAMING DEN, A FOP) with "WANTS £1000–£2500", plus a standing instruction banner ("GIVE TO THE WORTHY (GREEN) — REFUSE SPENDTHRIFTS (RED)").
+
+`gold` is now tracked in **real pounds** (fortune starts at £10,000), shown directly in the HUD with thousands separators. Costs: a worthy alms is **£25** (+1 virtue); a spendthrift demands **£1000–£2500** (−1 virtue). Thresholds rescaled accordingly: breakdown at `gold ≤ £3000`; Independence at `gold ≥ £9000 AND virtue ≥ 4` (the £9000 floor tolerates modest alms but not a Harrel bailout or spendthrift indulgence); Harrel's bailout now −£3000 (matching "three thousand pounds"); Briggs's prudent choice +£1000; `chaseDifficulty` gold term rescaled to `min(gold,12000)·0.00003`. Re-verified by 5000-run Monte-Carlo: **Ruin ≈ 12% (<30%)**, Independence now reachable (was 0). The thematic logic is sharper — cheap charity to the deserving builds virtue; indulging spendthrifts drains the fortune toward the breaking point.
+
 ## Final tuning (Task 10, 2026-06-13 — verified)
 Stat economy locked in; thresholds verified by a 5,000-run Monte-Carlo over the pure logic (`window.Cecilia`) plus reachability probes:
 - **Ruin = ~4.4%** of plausible playthroughs (well under the 30% criterion). Ruin's only source is the Monckton wish; the Arnott path resolves to Fortune-Married/Quiet-Spinster and the chase's Death is a separate tragic ending, neither counted as Ruin.
