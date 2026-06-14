@@ -408,6 +408,7 @@ let choiceIdx = 0;
 let currentScene = null;
 let currentEndingType = null;
 let mgReturnIdx = 0;
+let choiceStartY = 0;   // y where the choice list begins (set by drawDialogue so choices never overlap the spoken line)
 
 let stats = { hearts: 0, gold: 10, virtue: 3 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
@@ -1039,28 +1040,38 @@ function drawHUD() {
 
 function drawDialogue(scene) {
   if (!scene || (!scene.speaker && !scene.text)) return;
-  const boxH = 200;
-  const boxY = H - boxH;
+  const boxTop = 322, boxH = H - boxTop;   // taller box: 322..600
+  const boxY = boxTop;
   fillRect(0, boxY, W, boxH, C.k);
   fillRect(0, boxY, W, 4, C.w);
   fillRect(0, boxY + boxH - 4, W, 4, C.w);
   fillRect(0, boxY, 4, boxH, C.w);
   fillRect(W - 4, boxY, 4, boxH, C.w);
   if (scene.speaker) {
-    fillRect(20, boxY - 25, 300, 35, C.w);
-    fillRect(25, boxY - 20, 290, 25, C.k);
-    drawText(scene.speaker, 30, boxY - 13, C.g, 1, 'left', false);
+    fillRect(20, boxY - 34, 360, 40, C.w);
+    fillRect(25, boxY - 29, 350, 30, C.k);
+    drawText(scene.speaker, 34, boxY - 22, C.g, 1.5, 'left', false);
   }
-  const lines = wrapText(displayText, 50);
-  const lineH = 24;
-  const maxLines = Math.floor((boxH - 30) / lineH);
-  const startLine = Math.max(0, lines.length - maxLines);
-  for (let i = startLine; i < lines.length; i++) {
-    drawText(lines[i], 30, boxY + 20 + (i - startLine) * lineH, C.w, 1, 'left', false);
-  }
-  if (textIdx >= fullText.length) {
-    if (Math.floor(frame / 30) % 2 === 0) {
-      drawText('PRESS SPACE', W - 220, boxY + boxH - 30, C.g, 1, 'left', false);
+  const SIZE = 2, lineH = 30, maxChars = 44, padX = 30;
+  const hasChoices = !!(scene.choices && visibleChoices(scene, gameState()).length);
+  const lines = wrapText(displayText, maxChars);
+  if (hasChoices) {
+    // spoken line pinned to the top; choices go beneath it (never overlapping)
+    const textTop = boxY + 22;
+    for (let i = 0; i < lines.length; i++) {
+      drawText(lines[i], padX, textTop + i * lineH, C.w, SIZE, 'left', false);
+    }
+    const fullLines = wrapText(fullText, maxChars).length;   // stable position even mid-typing
+    choiceStartY = textTop + fullLines * lineH + 16;
+  } else {
+    // narration: vertically center the block so the box isn't half-empty
+    const blockH = lines.length * lineH;
+    const textTop = boxY + Math.max(22, (boxH - blockH) / 2 - 8);
+    for (let i = 0; i < lines.length; i++) {
+      drawText(lines[i], padX, textTop + i * lineH, C.w, SIZE, 'left', false);
+    }
+    if (textIdx >= fullText.length && Math.floor(frame / 30) % 2 === 0) {
+      drawText('PRESS SPACE', W - 230, boxY + boxH - 36, C.g, 1.5, 'left', false);
     }
   }
 }
@@ -1070,8 +1081,8 @@ function drawCharacter(charName) {
   const sprite = SP[charName];
   const maxW = Math.max(...sprite.map(r => r.length));
   const x = (W - maxW * 4) / 2;
-  // Slight idle animation
-  const y = 230 + Math.sin(frame * 0.05) * 1;
+  // Slight idle animation (raised so it clears the taller dialogue box + speaker label)
+  const y = 198 + Math.sin(frame * 0.05) * 1;
   drawSprite(sprite, x, y, 4);
 }
 
@@ -1096,19 +1107,15 @@ function drawTitle() {
 
 function drawChoices(choices) {
   if (!choices || textIdx < fullText.length) return;
-  const startY = 430;
+  const startY = choiceStartY || 430;
+  const pitch = 40, bx = 50, bw = 700, bh = 34;
   for (let i = 0; i < choices.length; i++) {
-    const cy = startY + i * 35;
+    const cy = startY + i * pitch;
     const selected = i === choiceIdx;
-    if (selected) {
-      fillRect(80, cy - 5, 640, 30, C.n);
-      fillRect(85, cy, 630, 20, C.B);
-    } else {
-      fillRect(80, cy - 5, 640, 30, C.k);
-      fillRect(85, cy, 630, 20, C.u);
-    }
-    if (selected) drawText('►', 95, cy + 5, C.y, 1, 'left', false);
-    drawText(choices[i].text, 115, cy + 8, selected ? C.w : C.c, 1, 'left', false);
+    fillRect(bx, cy, bw, bh, selected ? C.n : C.k);
+    fillRect(bx + 4, cy + 4, bw - 8, bh - 8, selected ? C.B : C.u);
+    if (selected) drawText('►', bx + 14, cy + 11, C.y, 1.5, 'left', false);
+    drawText(choices[i].text, bx + 44, cy + 11, selected ? C.w : C.c, 1.5, 'left', false);
   }
 }
 
@@ -1375,12 +1382,12 @@ function draw() {
     fillRect(0, boxY + boxH - 4, W, 4, C.w);
     fillRect(0, boxY, 4, boxH, C.w);
     fillRect(W - 4, boxY, 4, boxH, C.w);
-    const lines = wrapText(displayText, 55);
-    const lineH = 26;
-    const maxLines = Math.floor((boxH - 30) / lineH);
+    const lines = wrapText(displayText, 44);
+    const lineH = 30;
+    const maxLines = Math.floor((boxH - 36) / lineH);
     const startLine = Math.max(0, lines.length - maxLines);
     for (let i = startLine; i < lines.length; i++) {
-      drawText(lines[i], 30, boxY + 20 + (i - startLine) * lineH, C.w, 1, 'left', false);
+      drawText(lines[i], 30, boxY + 22 + (i - startLine) * lineH, C.w, 2, 'left', false);
     }
     if (textIdx >= fullText.length) {
       if (Math.floor(frame / 30) % 2 === 0) {
