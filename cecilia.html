@@ -843,7 +843,7 @@ function initMinigame() {
   for (let x = 650; x < 4800; x += 320 + Math.random() * 120) {
     const vice = Math.random() < 0.5;
     if (vice) {
-      mg.targets.push({ x, y: 360, w: 56, h: 60, kind: 'unworthy', who: unworthy[ui++ % unworthy.length], cost: 1000 + Math.round(Math.random() * 3) * 500, given: false });
+      mg.targets.push({ x, y: 360, w: 56, h: 60, kind: 'unworthy', who: unworthy[ui++ % unworthy.length], cost: 1000 + Math.round(Math.random() * 3) * 500, hit: false });
     } else {
       mg.targets.push({ x, y: 380, w: 44, h: 44, kind: 'worthy', who: worthy[wi++ % worthy.length], cost: 25, given: false });
     }
@@ -888,17 +888,28 @@ function updateMinigame() {
   }
   // Bounds
   if (mg.player.x < 50) { mg.player.x = 50; mg.player.vx = 0; }
-  // GIVE: Down / S, when near an ungiven target and she still has coin
+  // GIVE: Down / S to a WORTHY cause she is standing beside (alms = £25, +virtue)
   if (keyPressed('ArrowDown') || keyPressed('KeyS')) {
     for (const t of mg.targets) {
-      if (t.given) continue;
+      if (t.given || t.kind !== 'worthy') continue;
       if (Math.abs((mg.player.x + 12) - (t.x + t.w / 2)) < 50 && stats.gold > 0) {
         t.given = true;
-        applyGift(gameState(), t.kind, t.cost);   // mutates live stats by this target's cost
+        applyGift(gameState(), 'worthy', t.cost);
         mg.given++;
-        playSound(t.kind === 'worthy' ? 'coin' : 'hurt');
+        playSound('coin');
         break;
       }
+    }
+  }
+  // SPENDTHRIFTS are obstacles: JUMP over them. Colliding lets them seize money (and virtue).
+  for (const t of mg.targets) {
+    if (t.kind !== 'unworthy' || t.hit) continue;
+    if (mg.player.x + 30 > t.x && mg.player.x < t.x + t.w && mg.player.y + 56 > t.y) {
+      t.hit = true;
+      stats.gold = Math.max(0, stats.gold - t.cost);
+      stats.virtue = Math.max(0, stats.virtue - 1);
+      mg.player.vy = -7; mg.player.vx = -3;   // knocked back
+      playSound('hurt');
     }
   }
   // Finish
@@ -1255,15 +1266,15 @@ function drawMinigame() {
         drawText('✓', t.x + 8, t.y + bob - 22, C.h, 1, 'left', false);
       }
     } else {
-      // a gaudy figure (purple/gold), with a RED "spendthrift" warning label
-      fillRect(t.x, t.y + bob, 44, 48, t.given ? C.u : C.m);
-      fillRect(t.x + 8, t.y + bob - 10, 28, 14, t.given ? C.u : C.x);
-      if (!t.given) {
-        fillRect(t.x - 16, t.y + bob - 66, 132, 52, C.I);         // red banner
-        fillRect(t.x - 16, t.y + bob - 66, 132, 3, C.r);
-        drawText('SPENDTHRIFT', t.x - 10, t.y + bob - 62, C.r, 1, 'left', false);
+      // a gaudy figure (purple/gold) — an OBSTACLE to jump over; colliding robs her
+      fillRect(t.x, t.y + bob, 44, 48, t.hit ? C.u : C.m);
+      fillRect(t.x + 8, t.y + bob - 10, 28, 14, t.hit ? C.u : C.x);
+      if (!t.hit) {
+        fillRect(t.x - 16, t.y + bob - 66, 138, 52, C.I);         // red banner
+        fillRect(t.x - 16, t.y + bob - 66, 138, 3, C.r);
+        drawText('SPENDTHRIFT', t.x - 12, t.y + bob - 62, C.r, 1, 'left', false);
         drawText(name, t.x - 12, t.y + bob - 46, C.w, 1, 'left', false);
-        drawText('WANTS £' + t.cost.toLocaleString('en-GB'), t.x - 12, t.y + bob - 30, C.x, 1, 'left', false);
+        drawText('JUMP! £' + t.cost.toLocaleString('en-GB'), t.x - 12, t.y + bob - 30, C.x, 1, 'left', false);
       }
     }
   }
@@ -1288,7 +1299,7 @@ function drawMinigame() {
   // instruction banner: tell the player exactly who to give to
   fillRect(W / 2 - 300, 18, 600, 24, C.k);
   fillRect(W / 2 - 300, 18, 600, 3, C.w);
-  drawText('GIVE TO THE WORTHY (GREEN)   -   REFUSE SPENDTHRIFTS (RED)', W / 2, 25, C.w, 1, 'center');
+  drawText('GIVE TO THE WORTHY (GREEN, DOWN)   -   JUMP OVER SPENDTHRIFTS (RED)', W / 2, 25, C.w, 1, 'center');
   drawText('←→ WALK   ↓/S GIVE   SPACE JUMP', W / 2, H - 25, C.c, 1, 'center');
 }
 
