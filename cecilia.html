@@ -86,7 +86,8 @@
     <span class="key">↑↓</span> CHOOSE/STEER |
     <span class="key">←→</span> MOVE |
     <span class="key">↓</span> GIVE |
-    <span class="key">SPACE</span> JUMP
+    <span class="key">SPACE</span> JUMP |
+    <span class="key">M</span> MUSIC
   </div>
 
 <script>
@@ -719,6 +720,7 @@ const keys = {};
 window.addEventListener('keydown', (e) => {
   if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'].includes(e.code)) e.preventDefault();
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  if (e.code === 'KeyM') { musicOn = !musicOn; if (musicOn) { mBar = 0; mIdx = 0; bIdx = 0; } }
   if (!keys[e.code]) keys[e.code + '_p'] = true;
   keys[e.code] = true;
 });
@@ -766,6 +768,58 @@ function playSound(type) {
       break;
   }
 }
+
+// === BAROQUE BACKGROUND MUSIC (original, in the style of Handel's Giulio Cesare) ===
+let musicOn = true;
+const NF = { // note frequencies (Hz)
+  D3:146.83, E3:164.81, Fs3:185.00, G3:196.00, A3:220.00, B3:246.94,
+  D4:293.66, E4:329.63, Fs4:369.99, G4:392.00, A4:440.00, B4:493.88, Cs5:554.37,
+  D5:587.33, E5:659.25
+};
+const MSPB = 60 / 100; // 100 BPM, stately
+// Melody: a D-major aria with Baroque dotted figures and a cadential turn.
+const MELODY = [
+  ['D4',1],['E4',1],['Fs4',1],['G4',1],
+  ['A4',1.5],['G4',0.5],['Fs4',1],['E4',1],
+  ['Fs4',1],['A4',1],['D5',1],['Cs5',1],
+  ['B4',2],['A4',2],
+  ['B4',1],['A4',1],['G4',1],['Fs4',1],
+  ['A4',1],['G4',1],['Fs4',1],['E4',1],
+  ['G4',1],['Fs4',1],['E4',1],['A4',1],
+  ['Fs4',1],['E4',1],['D4',2]
+];
+// Basso continuo: half-note roots/fifths supporting the harmony.
+const BASS = [
+  ['D3',2],['A3',2], ['A3',2],['E3',2], ['B3',2],['Fs3',2], ['A3',2],['E3',2],
+  ['G3',2],['D3',2], ['Fs3',2],['D3',2], ['G3',2],['A3',2], ['A3',2],['D3',2]
+];
+function buildTrack(seq){ let t=0; const ev=[]; for(const [n,d] of seq){ ev.push({f:NF[n], t, d:d*MSPB}); t+=d*MSPB; } return {ev, len:t}; }
+const M_TRACK = buildTrack(MELODY), B_TRACK = buildTrack(BASS);
+const M_LOOP = Math.max(M_TRACK.len, B_TRACK.len);
+function musicNote(freq, start, dur, type, vol){
+  if(!audioCtx) return;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(vol, start + 0.012);   // quick harpsichord-like pluck
+  g.gain.exponentialRampToValueAtTime(0.0001, start + dur * 0.95);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(start); o.stop(start + dur + 0.02);
+}
+let mBar = 0, mIdx = 0, bIdx = 0;
+function scheduleMusic(){
+  if(!audioCtx || audioCtx.state !== 'running' || !musicOn) return;
+  const ahead = audioCtx.currentTime + 0.3;
+  if(mBar === 0) mBar = audioCtx.currentTime + 0.15;
+  while(mIdx < M_TRACK.ev.length && mBar + M_TRACK.ev[mIdx].t < ahead){
+    const e = M_TRACK.ev[mIdx]; musicNote(e.f, mBar + e.t, e.d, 'triangle', 0.05); mIdx++;
+  }
+  while(bIdx < B_TRACK.ev.length && mBar + B_TRACK.ev[bIdx].t < ahead){
+    const e = B_TRACK.ev[bIdx]; musicNote(e.f, mBar + e.t, e.d, 'square', 0.03); bIdx++;
+  }
+  if(mIdx >= M_TRACK.ev.length && bIdx >= B_TRACK.ev.length){ mBar += M_LOOP; mIdx = 0; bIdx = 0; }
+}
+setInterval(scheduleMusic, 60);
 
 // === MINIGAME ===
 function initMinigame() {
@@ -854,6 +908,15 @@ function updateMinigame() {
 }
 
 // === BACKGROUND RENDERERS ===
+// A Georgian 6-over-6 sash window: stone surround, white frame, pale glass, glazing bars.
+function drawSashWindow(x, y, w, h) {
+  fillRect(x - 3, y - 3, w + 6, h + 6, C.K);   // stone surround
+  fillRect(x, y, w, h, C.w);                    // white sash frame
+  fillRect(x + 2, y + 2, w - 4, h - 4, C.l);    // pale glass
+  fillRect(x + w / 2 - 1, y + 2, 2, h - 4, C.w);          // central glazing bar
+  fillRect(x + 2, y + Math.round(h / 3) - 1, w - 4, 2, C.w);
+  fillRect(x + 2, y + Math.round(2 * h / 3) - 1, w - 4, 2, C.w);
+}
 function drawBackground(type) {
   switch (type) {
     case 'title': {
@@ -912,25 +975,49 @@ function drawBackground(type) {
       break;
     }
     case 'london': {
-      fillRect(0, 0, W, H - 100, C.z);
-      const buildings = [
-        {x: 0, w: 80, h: 250, c: C.t}, {x: 80, w: 100, h: 300, c: C.a},
-        {x: 180, w: 90, h: 280, c: C.j}, {x: 270, w: 110, h: 350, c: C.t},
-        {x: 380, w: 80, h: 220, c: C.j}, {x: 460, w: 100, h: 320, c: C.a},
-        {x: 560, w: 90, h: 260, c: C.t}, {x: 650, w: 80, h: 300, c: C.j},
-        {x: 730, w: 70, h: 240, c: C.t}
-      ];
-      for (const b of buildings) {
-        const by = H - 100 - b.h;
-        fillRect(b.x, by, b.w, b.h, b.c);
-        for (let wy = 0; wy < b.h - 40; wy += 40) {
-          for (let wx = 10; wx < b.w - 15; wx += 25) {
-            if ((wy + wx + b.x) % 80 < 60) fillRect(b.x + wx, by + 20 + wy, 12, 18, C.y);
-          }
+      // Georgian street: a terrace of brick townhouses with sash windows, doors,
+      // chimney pots and area railings, beneath a pale day sky. A Wren church
+      // spire rises in the distance behind the rooftops.
+      fillRect(0, 0, W, H, C.z);                       // pale day sky
+      // distant Wren church steeple (drawn before houses so the terrace overlaps its base)
+      const sx = 500;
+      fillRect(sx, 70, 28, 60, C.o);                   // square stone tower
+      fillRect(sx - 2, 66, 32, 6, C['+']);             // tower cornice
+      fillRect(sx + 6, 84, 6, 12, C.k);                // louvred belfry openings
+      fillRect(sx + 17, 84, 6, 12, C.k);
+      for (let s = 0; s <= 26; s++) fillRect(sx + 1 + Math.round(s / 2), 66 - s * 2, 28 - s, 2, C.o); // tall spire
+      fillRect(sx + 13, 8, 2, 8, C.g);                 // gilt finial
+      // terrace of townhouses
+      const houseW = 165, roofY = 118;
+      const brick = [C.j, C.q, C.t, C.j, C.q, C.t];
+      for (let i = 0, x = -30; x < W; i++, x += houseW) {
+        const bw = houseW - 7;
+        fillRect(x, roofY, bw, H - roofY, brick[i % brick.length]);   // facade
+        fillRect(x, roofY, bw, 13, C.K);               // stone cornice
+        fillRect(x, roofY + 13, bw, 4, C.a);           // cornice shadow
+        // chimney stack + two pots
+        fillRect(x + bw - 50, roofY - 34, 34, 34, C.a);
+        fillRect(x + bw - 45, roofY - 46, 9, 14, C.q);
+        fillRect(x + bw - 31, roofY - 46, 9, 14, C.q);
+        // three rows of three sash windows
+        const colGap = bw / 3;
+        for (let r = 0; r < 3; r++) {
+          const wy = roofY + 30 + r * 64;
+          for (let c = 0; c < 3; c++) drawSashWindow(x + 18 + c * colGap, wy, 34, 46);
         }
+        // ground-floor door with fanlight
+        const dx = x + bw / 2 - 19, dy = H - 150;
+        fillRect(dx - 3, dy - 10, 44, 9, C.K);         // fanlight surround
+        fillRect(dx + 1, dy - 8, 36, 6, C.l);          // fanlight glass
+        fillRect(dx, dy, 38, 150, C.a);                // door
+        fillRect(dx + 5, dy + 8, 28, 55, C.t);         // upper panel
+        fillRect(dx + 5, dy + 70, 28, 50, C.t);        // lower panel
+        fillRect(dx + 30, dy + 60, 4, 5, C.g);         // brass knob
       }
-      fillRect(0, H - 100, W, 100, C.o);
-      fillRect(0, H - 60, W, 5, C.y);
+      // pavement + area railings along the street
+      fillRect(0, H - 122, W, 122, C.o);
+      fillRect(0, H - 158, W, 6, C.k);                 // top rail
+      for (let rx = 6; rx < W; rx += 16) fillRect(rx, H - 158, 4, 40, C.k); // railings
       break;
     }
     case 'ballroom': {
