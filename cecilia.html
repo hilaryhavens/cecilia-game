@@ -1424,6 +1424,79 @@ function drawDialogue(scene) {
   }
 }
 
+// A themed strip of ground for the speaker to stand on, filling the gap between
+// their feet (baseline) and the top of the dialogue box so they don't float.
+function drawSpeakerGround(bg, top) {
+  const bottom = 322;                 // meets the dialogue box
+  const h = bottom - top;
+  let face, edge, tex;
+  switch (bg) {
+    case 'garden':
+    case 'manor':   face = C.v; edge = C.h;    tex = C.d; break;  // lawn / grass
+    case 'london':  face = C.o; edge = C['+']; tex = C.k; break;  // stone pavement
+    case 'storm':   face = C.u; edge = C.o;    tex = C.k; break;  // wet flagstones
+    case 'ballroom':
+    default:        face = C.t; edge = C.q;    tex = C.a; break;  // polished wood
+  }
+  fillRect(0, top, W, h, face);
+  fillRect(0, top, W, 4, edge);                         // lit front edge of the floor
+  if (bg === 'garden' || bg === 'manor') {
+    for (let x = 0; x < W; x += 14) fillRect(x, top, 3, 5, tex);          // grass blades
+  } else if (bg === 'london' || bg === 'storm') {
+    fillRect(0, top + Math.floor(h / 2), W, 2, tex);                      // course joint
+    for (let x = 18; x < W; x += 40) fillRect(x, top + 5, 2, h - 5, tex); // cobble seams
+  } else {
+    for (let x = 0; x < W; x += 48) fillRect(x, top + 5, 2, h - 5, tex);  // plank seams
+  }
+}
+
+// Soft oval contact shadow so the figure reads as planted on the floor.
+function drawContactShadow(cx, cy, spriteW) {
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, spriteW * 0.42, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// A single hand-scrawled "IOU" debt note (cream paper, ruled line, red lettering).
+function drawIOUNote(cx, cy, rot) {
+  const w = 34, h = 22;
+  ctx.save();
+  ctx.translate(Math.floor(cx), Math.floor(cy));
+  ctx.rotate(rot);
+  ctx.fillStyle = '#10101c'; ctx.fillRect(-w/2 - 2, -h/2 - 2, w + 4, h + 4); // outline
+  ctx.fillStyle = C.c;       ctx.fillRect(-w/2, -h/2, w, h);                 // paper
+  ctx.fillStyle = C.a;       ctx.fillRect(w/2 - 6, -h/2, 6, 6);             // folded corner
+  ctx.fillStyle = C.q;       ctx.fillRect(-w/2 + 4, h/2 - 6, w - 8, 2);     // ruled line
+  ctx.fillStyle = C.F;
+  ctx.font = '9px "Press Start 2P", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('IOU', 0, -2);
+  ctx.restore();
+}
+
+// Harrel the spendthrift is hemmed in by his debts: notes drift around him,
+// some behind, a couple fluttering at his feet in front of the figure.
+function drawHarrelIOUs(front) {
+  // [x, y, baseRot, isFront]
+  const notes = [
+    [322, 182, -0.26, false], [482, 170, 0.22, false],
+    [330, 244, 0.16, false],  [474, 236, -0.18, false],
+    [300, 208, 0.30, false],  [498, 206, -0.30, false],
+    [362, 296, -0.12, true],  [442, 300, 0.16, true],
+  ];
+  for (let i = 0; i < notes.length; i++) {
+    const [nx, ny, br, isFront] = notes[i];
+    if (isFront !== front) continue;
+    const driftY = Math.sin(frame * 0.04 + i) * 3;
+    const wobble = Math.sin(frame * 0.03 + i) * 0.08;
+    drawIOUNote(nx, ny + driftY, br + wobble);
+  }
+}
+
 function drawCharacter(charName) {
   if (!charName || !SP[charName]) return;
   const sprite = SP[charName];
@@ -1435,7 +1508,11 @@ function drawCharacter(charName) {
   // (32-row) sprites share a baseline and clear the box. Slight idle bob.
   const baseline = 284;
   const y = baseline - sprite.length * scale + Math.sin(frame * 0.05) * 1;
+  drawSpeakerGround(currentScene.bg, baseline - 2);
+  drawContactShadow(W / 2, baseline, maxW * scale);
+  if (charName === 'harrel') drawHarrelIOUs(false);   // notes behind the figure
   drawSprite(sprite, x, y, scale, C, true);
+  if (charName === 'harrel') drawHarrelIOUs(true);    // notes fluttering in front
 }
 
 function drawTitle() {
