@@ -1084,14 +1084,19 @@ function initMinigame() {
   // spendthrifts demand ruinous sums (£1000-£2500) and corrode virtue.
   const worthy = ['family', 'hills', 'beggar', 'hospital'];
   const unworthy = ['harrel', 'gaming', 'fop'];
-  let wi = 0, ui = 0;
-  for (let x = 650; x < 4800; x += 320 + Math.random() * 120) {
-    const vice = Math.random() < 0.5;
+  let wi = 0, ui = 0, prevVice = false;
+  for (let x = 650; x < 4800; ) {
+    // Never two spendthrifts back-to-back, and keep them a touch rarer, so the
+    // player always has a clear stretch to land and line up the next jump.
+    const vice = !prevVice && Math.random() < 0.45;
     if (vice) {
       mg.targets.push({ x, y: 360, w: 56, h: 60, kind: 'unworthy', who: unworthy[ui++ % unworthy.length], cost: 1000 + Math.round(Math.random() * 3) * 500, hit: false });
     } else {
       mg.targets.push({ x, y: 380, w: 44, h: 44, kind: 'worthy', who: worthy[wi++ % worthy.length], cost: 25, given: false });
     }
+    // Wider gaps overall, and extra run-up right after a spendthrift.
+    x += (vice ? 460 : 340) + Math.random() * 120;
+    prevVice = vice;
   }
 }
 const TARGET_NAME = { family: 'POOR FAMILY', hills: 'THE HILLS', beggar: 'A BEGGAR', hospital: 'HOSPITAL', harrel: 'MR. HARREL', gaming: 'GAMING DEN', fop: 'A FOP' };
@@ -1147,9 +1152,11 @@ function updateMinigame() {
     }
   }
   // SPENDTHRIFTS are obstacles: JUMP over them. Colliding lets them seize money (and virtue).
+  // Forgiving hitbox: insets on both sides (so brushing past the edge is safe) and the
+  // top ~22px of the figure is clippable, so the jump only has to clear the lower body.
   for (const t of mg.targets) {
     if (t.kind !== 'unworthy' || t.hit) continue;
-    if (mg.player.x + 30 > t.x && mg.player.x < t.x + t.w && mg.player.y + 56 > t.y) {
+    if (mg.player.x + 24 > t.x + 12 && mg.player.x + 6 < t.x + t.w - 12 && mg.player.y + 56 > t.y + 22) {
       t.hit = true;
       stats.gold = Math.max(0, stats.gold - t.cost);
       stats.virtue = Math.max(0, stats.virtue - 1);
