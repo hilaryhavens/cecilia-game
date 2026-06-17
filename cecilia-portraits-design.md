@@ -57,3 +57,11 @@ Five already appear on-screen as speakers (Cecilia, young Delvile, Monckton, Bri
 4. The five newly-sprited characters appear in their existing scenes.
 5. No console errors; game still boots, plays, and renders all paths. Single-file `cecilia.html` unchanged in architecture.
 6. Sprites verified visually (headless-browser screenshot) before final commit — not authored blind.
+
+## Mid-flight addition (2026-06-16): Super Mario styling
+
+Per user request, the cast was pushed further toward a *Super Mario All-Stars* sprite look: `drawSprite` gained an optional bold dark-outline pass (8-neighbour silhouette outline, `#10101c`), enabled for all speaking portraits and the title Cecilia. This gives the chunky, outlined, "pops off any background" quality of Mario sprites while keeping the Georgian costumes and faces. Implemented in the same pass as the distinct-cast work.
+
+## Status: COMPLETE (2026-06-16) — commit `cb53620` on branch `portraits-distinct-cast`
+
+All ten characters authored at 24×32 with the Mario outline, speakers enlarged, palette expanded, five new characters wired into scenes (incl. a new elder-Delvile scene), `ceciliaRun` preserved for the minigame/chase. Verified headless: title + Briggs/Harrel/elder-Delvile/Albany scenes + charity minigame all render; scene validation reports no missing sprites; no console errors beyond the pre-existing favicon 404. NOT yet merged to `main` / pushed (awaiting user review).
