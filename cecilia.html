@@ -125,14 +125,17 @@ const C = {
   'o': '#808080', 'u': '#404048', 'm': '#A040F0', 'x': '#FFA040',
   'q': '#D08040', 'j': '#A05030', 'z': '#80C0F0', 'Z': '#4080F0',
   'M': '#FF80A0', 'C': '#E0E0FF', 'L': '#604020', '+': '#C0C0C0',
-  'K': '#FFE0B0', 'I': '#702030'
+  'K': '#FFE0B0', 'I': '#702030',
+  // Portrait shading tones (distinct-cast update)
+  'S': '#E0A878', 'W': '#F4F4FA', 'G': '#C4C4CE', 'P': '#7A1F2B',
+  'T': '#1F8A8A', 'V': '#B884D8', 'E': '#D81E1E', 'N': '#101830'
 };
 
 // === SPRITES (16x20 characters, '.' = transparent) ===
 const SP = {};
 
-// Cecilia - heroine in pink empire dress
-SP.cecilia = [
+// ceciliaRun - original compact 16x20 sprite, kept for minigame/chase running figure
+SP.ceciliaRun = [
   "....eeee........",
   "...eeeeee.......",
   "..eessssee......",
@@ -155,124 +158,336 @@ SP.cecilia = [
   "....kkkk........",
 ];
 
-// Mr. Delvile - nobleman, dark hair, blue tailcoat
+// === 24x32 PORTRAIT SPRITES (distinct cast, drawn with Mario-style outline) ===
+// Cecilia - heroine, white powdered coiffure, rose gown
+SP.cecilia = [
+  ".........GWWG...........",
+  "........GWWWWG..........",
+  ".......GWWWWWWG.........",
+  "......GWWWWWWWWG........",
+  "......WWWsssssWWW.......",
+  ".....WWWsssssssWWW......",
+  ".....GWWsksssksWWG......",
+  "......WWMssSssMWW.......",
+  ".......WsssrrsssW.......",
+  "........WsssssW.........",
+  "..........ssss.........",
+  "........wwssssww........",
+  "......wwwppppppwww......",
+  ".......MppppppppM.......",
+  ".......iiiiggiiii.......",
+  "......pppppppppppp......",
+  "......pppppppppppp......",
+  ".....pppppppppppppp.....",
+  ".....ppppppMMpppppp.....",
+  ".....pppppppppppppp.....",
+  "....pppppppppppppppp....",
+  "....ppppppMMMMpppppp....",
+  "....pppppppppppppppp....",
+  "...pppppppppppppppppp...",
+  "...ppppppMMMMMMpppppp...",
+  "...pppppppppppppppppp...",
+  "...pppppppppppppppppp...",
+  "..pppppppppppppppppppp..",
+  "..ppppMMMMMMMMMMMMpppp..",
+  "..pppppppppppppppppppp..",
+  "..wwwwwwwwwwwwwwwwwwww..",
+  "...MMMMMMMMMMMMMMMMMM...",
+];
+
+// Mortimer Delvile - young love interest, slim, blue tailcoat
 SP.delvile = [
-  "....nnnn........",
-  "...nnnnnn.......",
-  "..nssssssn......",
-  "..nskkkssn......",
-  "..nsssssssn.....",
-  "..nsssisssn.....",
-  "..nsssssssn.....",
-  "..nnnnnnnn......",
-  "....cccc........",
-  "...BBBBBB.......",
-  "..BBBBBBBB......",
-  "..BBBBBBBB......",
-  "..BBBBBBBB......",
-  "..BBBBBBBB......",
-  "..BBBBBBBB......",
-  "..BBBBBBBB......",
-  "..BBBBBBBB......",
-  "...BBBBBB.......",
-  "....ssss........",
-  "....kkkk........",
+  ".........WWWWWW.........",
+  "........WWWWWWWW........",
+  ".......WWWWWWWWWW.......",
+  "......WWWssssssWWW......",
+  "......WWssssssssWW......",
+  ".....WWWssksskssWWW.....",
+  "....WWWWsssSSsssWWWW....",
+  "......WWsssIIsssWW......",
+  ".........ssssss.........",
+  ".........wssssw.........",
+  "........wwwwwwww........",
+  "......BBBBwwwwBBBB......",
+  "......BBwwccccwwBB......",
+  "......BBBccgcccBBB......",
+  "......BBBccccccBBB......",
+  "......BBBccccccBBB......",
+  ".....BBBBccccBBBB.......",
+  ".....BBBBBBBBBBBB.......",
+  ".....BBBBKKKKBBBB.......",
+  "......KKKKKKKKKK........",
+  "......KKKKKKKKKK........",
+  "......KKKKKKKKKK........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......kkkk..kkkk........",
+  ".....kkkkk..kkkkk.......",
 ];
 
-// Mr. Monckton - schemer, green coat
+// Mr. Delvile (elder) - proud father, grand wig, claret coat, cane
+SP.elderdelvile = [
+  ".......WWWWWWWW.........",
+  "......WWWWWWWWWW........",
+  ".....WWWWWWWWWWWW.......",
+  ".....WWWWssssssWWW......",
+  ".....WWssssssssWW.......",
+  "....WWWGssksskssWWW.....",
+  "...WWWWWsssSSsssWWWWW...",
+  ".....WWsssIIsssWW.......",
+  "......SsssssssS.........",
+  ".........wssssw.........",
+  "........wwwwwwww........",
+  "......PPPPwwwwPPPP......",
+  "......PPwwggggwwPP......",
+  "......PPPcggggcPPP....t.",
+  "......PPPcggggcPPP....t.",
+  "......PPPcggggcPPP....t.",
+  ".....PPPPggggPPPP.....t.",
+  ".....PPPPPPPPPPPP.....t.",
+  ".....PPPPKKKKPPPP.....t.",
+  "......KKKKKKKKKK......t.",
+  "......KKKKKKKKKK......t.",
+  "......KKKKKKKKKK........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......kkkk..kkkk........",
+  ".....kkkkk..kkkkk.......",
+];
+
+// Mr. Monckton - schemer, sleek severe wig, forest-green coat
 SP.monckton = [
-  "....nnnn........",
-  "...nnnnnn.......",
-  "..nssssssn......",
-  "..nskkkssn......",
-  "..nsssssssn.....",
-  "..nssiiissn.....",
-  "..nsssssssn.....",
-  "..nnnnnnnn......",
-  "....cccc........",
-  "...vvvvvv.......",
-  "..vvvvvvvv......",
-  "..vvvvvvvv......",
-  "..vvvvvvvv......",
-  "..vvvvvvvv......",
-  "..vvvvvvvv......",
-  "..vvvvvvvv......",
-  "..vvvvvvvv......",
-  "...vvvvvv.......",
-  "....ssss........",
-  "....kkkk........",
+  ".........WWWWWW.........",
+  "........WWWWWWWW........",
+  ".......WWWWWWWWWW.......",
+  "......WWWssssssWWW......",
+  "......WWssssssssWW......",
+  "......WsskuukssW........",
+  ".....WWsssSSsssWW.......",
+  "......WssskkksssW.......",
+  ".........ssssss.........",
+  ".........wssssw.........",
+  "........wwwwwwww........",
+  "......ddddwwwwdddd......",
+  "......ddwwddddwwdd......",
+  "......dddvvvvvvddd......",
+  "......dddvvggvvddd......",
+  "......dddvvvvvvddd......",
+  ".....ddddvvvvdddd.......",
+  ".....dddddddddddd.......",
+  ".....dddduuuudddd.......",
+  "......uuuuuuuuuu........",
+  "......uuuuuuuuuu........",
+  "......uuuuuuuuuu........",
+  "......kkkk..kkkk........",
+  "......kkkk..kkkk........",
+  "......kkkk..kkkk........",
+  "......kkkk..kkkk........",
+  "......kkkk..kkkk........",
+  "......kkkk..kkkk........",
+  ".....kkkkk..kkkkk.......",
 ];
 
-// Sir Robert Floyer - red coat, jolly buffoon
+// Sir Robert Floyer - broad, florid, scarlet coat, riding boots
 SP.floyer = [
-  "....FFFF........",
-  "...FFFFFF.......",
-  "..FssssssF......",
-  "..FskkkssF......",
-  "..FsssssssF.....",
-  "..FssiiiissF....",
-  "..FsssssssF.....",
-  "..FFFFFFFFF.....",
-  "....cccc........",
-  "...rrrrrr.......",
-  "..rrrrrrrr......",
-  "..rrrrrrrr......",
-  "..rrrrrrrr......",
-  "..rrrrrrrr......",
-  "..rrrrrrrr......",
-  "..rrrrrrrr......",
-  "..rrrrrrrr......",
-  "...rrrrrr.......",
-  "....ssss........",
-  "....kkkk........",
+  ".........WWWWWW.........",
+  "........WWWWWWWW........",
+  ".......WWWWWWWWWW.......",
+  "......WWWssssssWWW......",
+  "......WrsssssssrW.......",
+  ".....WWsskuukssWW.......",
+  "....WWWWsssSSsssWWWW....",
+  "......WrssIIIIssrW......",
+  "........SssssssS........",
+  ".........wssssw.........",
+  ".......wwwwwwwwww.......",
+  "....EEEEEEwwwwEEEEEE....",
+  "....EEEEwwccccwwEEEE....",
+  "....EEEEEcgggcEEEEE.....",
+  "....EEEEEcgggcEEEEE.....",
+  "....EEEEEcgggcEEEEE.....",
+  "....EEEEEEcccEEEEEE.....",
+  "....EEEEEEEEEEEEEE......",
+  "....EEEEKKKKKKEEEE......",
+  ".....KKKKKKKKKKKK......",
+  ".....KKKKKKKKKKKK......",
+  ".....kkkkk..kkkkk......",
+  ".....kkkkk..kkkkk......",
+  ".....kkkkk..kkkkk......",
+  ".....kkkkk..kkkkk......",
+  ".....kkkkk..kkkkk......",
+  ".....kkkkk..kkkkk......",
+  "....kkkkkk..kkkkkk.....",
+  "....kkkkkk..kkkkkk.....",
 ];
 
-// Mr. Briggs - elderly guardian, white wig, brown coat
+// Mr. Briggs - miser, ill-kempt wig, hunched, shabby brown, money-bag
 SP.briggs = [
-  "....wwww........",
-  "...wwwwww.......",
-  "..wssssssw......",
-  "..wskkkssw......",
-  "..wsssssssw.....",
-  "..wsssissw......",
-  "..wsssssssw.....",
-  "..wwwwwwww......",
-  "....cccc........",
-  "...tttttt.......",
-  "..tttttttt......",
-  "..tttttttt......",
-  "..tttttttt......",
-  "..tttttttt......",
-  "..tttttttt......",
-  "..tttttttt......",
-  "..tttttttt......",
-  "...tttttt.......",
-  "....ssss........",
-  "....kkkk........",
+  ".......................",
+  ".....G..WWGW.G.........",
+  "....GWWGWWWWGWG........",
+  "...GWGWWWWWWWWWWG......",
+  "....WWGsssssssGWWG.....",
+  "....WGsskssskssGW......",
+  "...WGWssssSSsssWGW.....",
+  "....WssrsIIsrssW.......",
+  ".....SssssssssS.........",
+  "........qssssq.........",
+  ".......ttttttttt.......",
+  ".....tttttttttttt......",
+  ".....taaaaaaaaaat......",
+  ".....taaaajjaaaat......",
+  ".....taaajggjaaat......",
+  ".....taaajggjaaat......",
+  "....ttaaaajjaaaatt.....",
+  "....tttttttttttttt.....",
+  "....ttttaaaattttt......",
+  ".....aaaaaaaaaa........",
+  ".....aaaaaaaaaa........",
+  ".....aaaaaaaaaa........",
+  ".....LLLL..LLLL........",
+  ".....LLLL..LLLL........",
+  ".....LLLL..LLLL........",
+  ".....LLLL..LLLL........",
+  ".....kkkk..kkkk........",
+  "....kkkkk..kkkkk.......",
 ];
 
-// Mrs. Delvile - tall, dignified, dark dress
+// Mrs. Delvile - tall coiffure, deep-green gown, dignified, older
 SP.mrsdelvile = [
-  "................",
-  "....nnnn........",
-  "...nnnnnn.......",
-  "..nssssssn......",
-  "..nskkkssn......",
-  "..nsssssssn.....",
-  "..nnnnnnnn......",
-  "................",
-  "....nnnn........",
-  "...nnnnnn.......",
-  "..nnnnnnnn......",
-  "..nnnnnnnn......",
-  "..nnnnnnnn......",
-  "..nnnnnnnn......",
-  "..nnnnnnnn......",
-  "..nnnnnnnn......",
-  "..nnnnnnnn......",
-  "...nnnnnn.......",
-  "................",
-  "................",
+  "........GWWWWG..........",
+  ".......GWWWWWWG.........",
+  "......GWWWWWWWWG........",
+  ".....GWWWsssssWWWG......",
+  "......WWWsssssWWW.......",
+  ".....WWWsssssssWWW......",
+  ".....GWWsksssksWWG......",
+  "......WWsssSsssWW.......",
+  "......WsssIIsssW........",
+  "........WsssssW.........",
+  "..........ssss.........",
+  "........wwssssww........",
+  "......wwwvvvvvvwww......",
+  ".......dvvvvvvvvd.......",
+  ".......ddddggdddd.......",
+  "......vvvvvvvvvvvv......",
+  "......vvvvvvvvvvvv......",
+  ".....vvvvvvvvvvvvvv.....",
+  ".....vvvvvvddvvvvvv.....",
+  ".....vvvvvvvvvvvvvv.....",
+  "....vvvvvvvvvvvvvvvv....",
+  "....vvvvvvddddvvvvvv....",
+  "....vvvvvvvvvvvvvvvv....",
+  "...vvvvvvvvvvvvvvvvvv...",
+  "...vvvvvvddddddvvvvvv...",
+  "...vvvvvvvvvvvvvvvvvv...",
+  "...vvvvvvvvvvvvvvvvvv...",
+  "..vvvvvvvvvvvvvvvvvvvv..",
+  "..vvvvddddddddddddvvvv..",
+  "..vvvvvvvvvvvvvvvvvvvv..",
+  "..wwwwwwwwwwwwwwwwwwww..",
+  "...dddddddddddddddddd...",
+];
+
+// Mr. Harrel - fop, tall over-powdered wig, peacock coat, lilac frills
+SP.harrel = [
+  "......W.WWWW.W..........",
+  ".....WWWWWWWWWW.........",
+  "....WWWWWWWWWWWWW.......",
+  ".....WWWWWWWWWWWW.......",
+  "......WWWssssssWWW......",
+  "......WWssssssssWW......",
+  ".....WWWssksskssWWW.....",
+  "....WWWWsssSSsssWWWW....",
+  "......WWsssIIsssWW......",
+  ".......wwwsssswww.......",
+  "......wwwwwwwwwwww......",
+  "......TTTTwwwwTTTT......",
+  "......TTwwVVVVwwTT......",
+  "......TTTVVVVVVTTT......",
+  "......TTTVVggVVTTT......",
+  "......TTTVVVVVVTTT......",
+  ".....TTTTVVVVTTTT.......",
+  ".....TTTTTTTTTTTT.......",
+  ".....TTTTKKKKTTTT.......",
+  "......KKKKKKKKKK........",
+  "......KKKKKKKKKK........",
+  "......KKKKKKKKKK........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......kkkk..kkkk........",
+  ".....kkkkk..kkkkk.......",
+];
+
+// Mr. Albany - no wig, wild grey hair, ragged cloak, staff
+SP.albany = [
+  "....G...GG...G.........",
+  "...GoG.GooG.GoG........",
+  "..GooGGoooGGGooG.......",
+  "..ooGooooooooooGo......",
+  "...oossssssssoo.t......",
+  "...osssksssksso.t......",
+  "..ooSssssSSsssSoo.t....",
+  "...oSsssIIIsssSo.t.....",
+  "...GoSssssssSoG.t......",
+  "....ooSssssSoo.t.......",
+  ".....uoSSSSou.t........",
+  "....uuuuuuuuuu.t.......",
+  "...uukkkkkkkkuu.t......",
+  "...ukkkkkkkkkku.t......",
+  "..uukkkkkkkkkkuu.t.....",
+  "..ukkkkkkkkkkkku.t.....",
+  "..ukkkkuuuukkkku.t.....",
+  "..uukkkkkkkkkkuu.t.....",
+  "...ukkkkkkkkkku.t......",
+  "...ukkkkkkkkkku.t......",
+  "..uukkkkkkkkkkuu.t.....",
+  "..ukkkkkkkkkkkku.t.....",
+  "..ukkkkkkkkkkkku.t.....",
+  "..uukkkkkkkkkkuu.t.....",
+  "...uukkkkkkkkuu.t......",
+  "....uukkkkkkuu.t.......",
+  ".....kkkk..kkkk........",
+  "....kkkkk..kkkkk.......",
+];
+
+// Mr. Arnott - shy, downcast, sober-brown coat, hands clasped
+SP.arnott = [
+  ".........WWWWWW.........",
+  "........WWWWWWWW........",
+  ".......WWWWWWWWWW.......",
+  "......WWWssssssWWW......",
+  "......WWssssssssWW......",
+  "......WWsskkkkssWW......",
+  ".......WsssSSsssW.......",
+  ".......WssssssssW.......",
+  "........Wsssssss........",
+  ".........wssssw.........",
+  "........wwwwwwww........",
+  "......jjjjwwwwjjjj......",
+  "......jjwwLLLLwwjj......",
+  "......jjjLLLLLLjjj......",
+  "......jjjLssssLjjj......",
+  "......jjjLssssLjjj......",
+  ".....jjjjLLLLjjjj.......",
+  ".....jjjjjjjjjjjj.......",
+  ".....jjjjKKKKjjjj.......",
+  "......KKKKKKKKKK........",
+  "......KKKKKKKKKK........",
+  "......KKKKKKKKKK........",
+  "......jjjj..jjjj........",
+  "......jjjj..jjjj........",
+  "......wwww..wwww........",
+  "......wwww..wwww........",
+  "......kkkk..kkkk........",
+  ".....kkkkk..kkkkk.......",
 ];
 
 // Heart collectible
@@ -346,8 +561,29 @@ SP.scandal = [
 ];
 
 // === DRAWING FUNCTIONS ===
-function drawSprite(sprite, x, y, scale, colorMap = C) {
+function drawSprite(sprite, x, y, scale, colorMap = C, outline = false) {
   const maxWidth = Math.max(...sprite.map(r => r.length));
+  const isFilled = (r, c) => {
+    if (r < 0 || r >= sprite.length || c < 0) return false;
+    const ch = (sprite[r] || '')[c];
+    return ch && ch !== '.' && ch !== ' ' && colorMap[ch];
+  };
+  // Pass 1: bold Super-Mario-style outline around the silhouette (8-neighbourhood)
+  if (outline) {
+    const oc = (typeof outline === 'string') ? outline : '#10101c';
+    ctx.fillStyle = oc;
+    for (let row = 0; row < sprite.length; row++) {
+      for (let col = 0; col < maxWidth; col++) {
+        if (isFilled(row, col)) continue;
+        let near = false;
+        for (let dr = -1; dr <= 1 && !near; dr++)
+          for (let dc = -1; dc <= 1; dc++)
+            if (isFilled(row + dr, col + dc)) { near = true; break; }
+        if (near) ctx.fillRect(Math.floor(x + col * scale), Math.floor(y + row * scale), scale, scale);
+      }
+    }
+  }
+  // Pass 2: fills
   for (let row = 0; row < sprite.length; row++) {
     const line = sprite[row].padEnd(maxWidth, '.');
     for (let col = 0; col < line.length; col++) {
@@ -531,7 +767,7 @@ const SCENES = [
     ]
   },
   {
-    bg: 'garden', speaker: 'MR. DELVILE',
+    bg: 'garden', speaker: 'MORTIMER DELVILE',
     text: "'Miss Beverley, I must be honest with you. I love you - but my family name is precious to me. I cannot take yours. Yet I cannot bear to see you sacrificed to mercenary schemes.'",
     character: 'delvile',
     choices: [
@@ -543,7 +779,7 @@ const SCENES = [
   {
     bg: 'manor', speaker: 'MR. HARREL',
     text: "'Miss Beverley! You honour our house. Pay no mind to the duns at the door - a gentleman's expenses are merely... temporary embarrassments.'",
-    character: 'monckton',
+    character: 'harrel',
     choices: [
       { text: "'I am sorry to hear of your troubles, sir.'", effect: (gs) => { gs.flags.sympathizedWithHarrel = true; gs.stats.virtue += 0; } },
       { text: "'Perhaps economy would serve the household better.'", effect: (gs) => { gs.stats.virtue += 1; } }
@@ -552,7 +788,7 @@ const SCENES = [
   {
     bg: 'ballroom', speaker: 'MR. FLOYER',
     text: "'Miss Beverley - that is - I had meant to say - the weather, and your eyes, are both uncommonly fine today!' He treads upon your hem.",
-    character: 'briggs',
+    character: 'floyer',
     choices: [
       { text: "Laugh kindly and encourage him.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; } },
       { text: "Excuse yourself with civility.", effect: (gs) => { gs.stats.virtue += 1; } }
@@ -561,7 +797,7 @@ const SCENES = [
   {
     bg: 'garden', speaker: 'MR. ARNOTT',
     text: "Mr. Arnott can scarcely meet your eye. 'I ask nothing, Miss Beverley - only that you should never want for a friend who... who esteems you.'",
-    character: 'delvile',
+    character: 'arnott',
     choices: [
       { text: "'You are the truest friend I have, Mr. Arnott.'", effect: (gs) => { gs.suitors.arnott += 1; gs.flags.kindToArnott = true; } },
       { text: "Thank him gently and turn away.", effect: (gs) => {} }
@@ -570,7 +806,7 @@ const SCENES = [
   {
     bg: 'london', speaker: 'OLD ALBANY',
     text: "'You are rich, child. But riches are a trust, not a toy. Will you squander on flatterers, or relieve the wretched who have no voice?'",
-    character: 'monckton',
+    character: 'albany',
     choices: [
       { text: "'Teach me to do good with what I have.'", effect: (gs) => { gs.stats.virtue += 2; } },
       { text: "'Charity is a private matter, sir.'", effect: (gs) => { gs.stats.virtue -= 1; } }
@@ -581,7 +817,7 @@ const SCENES = [
     text: (gs) => gs.flags.sympathizedWithHarrel
       ? "'You felt for me once - feel for me now! Three thousand pounds, or I am a ruined man this very night!'"
       : "'I am desperate, Miss Beverley! Lend me three thousand pounds, or my blood is upon your hands!'",
-    character: 'monckton',
+    character: 'harrel',
     choices: [
       { text: "Give him the money to quiet the scandal.", effect: (gs) => { gs.stats.gold = Math.max(0, gs.stats.gold - 3000); gs.stats.virtue -= 1; gs.flags.gaveMoneyToHarrel = true; } },
       { text: "Refuse - his ruin is of his own making.", effect: (gs) => { gs.stats.virtue += 1; } }
@@ -603,8 +839,17 @@ const SCENES = [
       { text: "'Then your son must choose between us.'", effect: (gs) => { gs.flags.mrsDelvileApproval = false; } }
     ]
   },
+  { // Elder Mr. Delvile asserts the family's name-pride
+    bg: 'manor', speaker: 'MR. DELVILE',
+    text: "'Miss Beverley. The name of Delvile has descended unsullied for centuries. I will not see it bartered, nor bent to suit a fortune - however large. You will understand a father's duty.'",
+    character: 'elderdelvile',
+    choices: [
+      { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => { gs.stats.virtue += 1; } },
+      { text: "'A name is not worth a son's happiness.'", effect: (gs) => {} }
+    ]
+  },
   { // Mortimer's private confession
-    bg: 'garden', speaker: 'MR. DELVILE',
+    bg: 'garden', speaker: 'MORTIMER DELVILE',
     text: "'Cecilia - marry me in secret. Let no name, no fortune, no mother stand between us. Only say yes.'",
     character: 'delvile',
     condition: (gs) => gs.suitors.delvile >= 1,
@@ -1183,10 +1428,14 @@ function drawCharacter(charName) {
   if (!charName || !SP[charName]) return;
   const sprite = SP[charName];
   const maxW = Math.max(...sprite.map(r => r.length));
-  const x = (W - maxW * 4) / 2;
-  // Slight idle animation (raised so it clears the taller dialogue box + speaker label)
-  const y = 198 + Math.sin(frame * 0.05) * 1;
-  drawSprite(sprite, x, y, 4);
+  const scale = 5;
+  const x = (W - maxW * scale) / 2;
+  // Stand every speaker on a common floor just above the dialogue box's speaker
+  // label (label sits at ~288; box top is 322), so short (28-row) and tall
+  // (32-row) sprites share a baseline and clear the box. Slight idle bob.
+  const baseline = 284;
+  const y = baseline - sprite.length * scale + Math.sin(frame * 0.05) * 1;
+  drawSprite(sprite, x, y, scale, C, true);
 }
 
 function drawTitle() {
@@ -1194,8 +1443,8 @@ function drawTitle() {
   drawText('CECILIA', W/2, y, C.g, 6, 'center');
   drawText('A MARRIAGE QUEST', W/2, 170, C.w, 3, 'center');
   drawText('After the novel by Frances Burney', W/2, 215, C.c, 1, 'center');
-  const ceciliaY = 270 + Math.sin(frame * 0.06) * 4;
-  drawSprite(SP.cecilia, W/2 - 32, ceciliaY, 4);
+  const ceciliaY = 255 + Math.sin(frame * 0.06) * 4;
+  drawSprite(SP.cecilia, W/2 - (24 * 4) / 2, ceciliaY, 4, C, true);
   for (let i = 0; i < 3; i++) {
     const angle = frame * 0.03 + (i * 2 * Math.PI / 3);
     const hx = W/2 + Math.cos(angle) * 80;
@@ -1281,7 +1530,7 @@ function drawMinigame() {
   // Player
   const px = Math.floor(mg.player.x);
   const py = Math.floor(mg.player.y);
-  drawSprite(SP.cecilia, px, py + (mg.player.onGround && Math.abs(mg.player.vx) > 0.5 ? Math.sin(mg.levelTime * 0.3) : 0), 3);
+  drawSprite(SP.ceciliaRun, px, py + (mg.player.onGround && Math.abs(mg.player.vx) > 0.5 ? Math.sin(mg.levelTime * 0.3) : 0), 3);
   // End marker
   fillRect(mg.endX, 200, 6, 210, C.L);
   fillRect(mg.endX + 6, 210, 60, 40, C.v);
@@ -1383,7 +1632,7 @@ function drawChase() {
     fillRect(0, 0, W, H, C.I);
     const shake = Math.sin(chase.t * 0.5) * 4;
     for (let i = 0; i < 40; i++) fillRect((i * 53 + chase.t * 3) % W, (i * 71) % H, 3, 3, C.r);
-    drawSprite(SP.cecilia, W/2 - 30 + shake, 300 + Math.sin(chase.t * 0.3) * 6, 4);
+    drawSprite(SP.ceciliaRun, W/2 - 30 + shake, 300 + Math.sin(chase.t * 0.3) * 6, 4);
     drawText('REACH HIM!  →/SPACE', W/2, 30, C.w, 2, 'center');
     // reach meter (good) and overtaken meter (bad)
     fillRect(80, 120, 300, 22, C.k); fillRect(82, 122, 296 * (chase.reach / 100), 18, C.v);
