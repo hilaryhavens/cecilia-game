@@ -742,7 +742,7 @@ const SCENES = [
     text: "What? make it over to a scoundrel? no, no, won't suffer it; sha'n't be, sha'n't be - don't marry proper! I'll have a care whom ye choose!'",
     character: 'briggs',
     choices: [
-      { text: "'Sir, I shall choose with wisdom.'", effect: (gs) => { gs.stats.virtue += 1; } },
+      { text: "'Sir, I shall choose with wisdom.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } },
       { text: "'Sir, I shall consult you on all matters.'", effect: (gs) => { gs.stats.gold += 1000; } },
       { text: "'Sir, I am mistress of my own fate!'", effect: (gs) => { gs.stats.hearts += 0; } }
     ]
@@ -753,8 +753,8 @@ const SCENES = [
     character: 'mrsdelvile',
     choices: [
       { text: "Greet Mortimer Delvile warmly.", effect: (gs) => { gs.suitors.delvile += 1; } },
-      { text: "Engage instead Mr. Monckton in conversation.", effect: (gs) => { gs.suitors.monckton += 1; } },
-      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "Engage instead Mr. Monckton in conversation.", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -762,8 +762,8 @@ const SCENES = [
     text: "'My dear Miss Beverley, I confess I am most eager to be of service. Your late uncle trusted me implicitly - perhaps we might discuss... arrangements?'",
     character: 'monckton',
     choices: [
-      { text: "'How kind. Tell me more.'", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; } },
-      { text: "'Sir, I am not for sale!'", effect: (gs) => { gs.stats.virtue += 1; gs.suitors.monckton -= 1; } },
+      { text: "'How kind. Tell me more.'", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "'Sir, I am not for sale!'", effect: (gs) => { gs.stats.virtue += 1; gs.suitors.monckton -= 1; clampVirtue(gs); } },
       { text: "'Sir, your concern is noted.'", effect: (gs) => {} }
     ]
   },
@@ -783,7 +783,7 @@ const SCENES = [
     character: 'harrel',
     choices: [
       { text: "'I am sorry to hear of your troubles, sir.'", effect: (gs) => { gs.flags.sympathizedWithHarrel = true; gs.stats.virtue += 0; } },
-      { text: "'Perhaps economy would serve the household better.'", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "'Perhaps economy would serve the household better.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -791,8 +791,8 @@ const SCENES = [
     text: "'Miss Beverley - that is - I had meant to say - the weather, and your eyes, are both uncommonly fine today!' He treads upon your hem.",
     character: 'floyer',
     choices: [
-      { text: "Laugh kindly and encourage him.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; } },
-      { text: "Excuse yourself with civility.", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "Laugh kindly and encourage him.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "Excuse yourself with civility.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -809,8 +809,8 @@ const SCENES = [
     text: "'You are rich, child. But riches are a trust, not a toy. Will you squander on flatterers, or relieve the wretched who have no voice?'",
     character: 'albany',
     choices: [
-      { text: "'Teach me to do good with what I have.'", effect: (gs) => { gs.stats.virtue += 2; } },
-      { text: "'Charity is a private matter, sir.'", effect: (gs) => { gs.stats.virtue -= 1; } }
+      { text: "'Teach me to do good with what I have.'", effect: (gs) => { gs.stats.virtue += 2; clampVirtue(gs); } },
+      { text: "'Charity is a private matter, sir.'", effect: (gs) => { gs.stats.virtue -= 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -820,8 +820,8 @@ const SCENES = [
       : "'I am desperate, Miss Beverley! Lend me three thousand pounds, or my blood is upon your hands!'",
     character: 'harrel',
     choices: [
-      { text: "Give him the money to quiet the scandal.", effect: (gs) => { gs.stats.gold = Math.max(0, gs.stats.gold - 3000); gs.stats.virtue -= 1; gs.flags.gaveMoneyToHarrel = true; } },
-      { text: "Refuse - his ruin is of his own making.", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "Give him the money to quiet the scandal.", effect: (gs) => { gs.stats.gold = Math.max(0, gs.stats.gold - 3000); gs.stats.virtue -= 1; gs.flags.gaveMoneyToHarrel = true; clampVirtue(gs); } },
+      { text: "Refuse - his ruin is of his own making.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -836,7 +836,7 @@ const SCENES = [
       : "'Miss Beverley. I will be plain. There can be no union that costs my family its name.'",
     character: 'mrsdelvile',
     choices: [
-      { text: "'I would never ask him to dishonour his name.'", effect: (gs) => { gs.flags.mrsDelvileApproval = true; gs.stats.virtue += 1; } },
+      { text: "'I would never ask him to dishonour his name.'", effect: (gs) => { gs.flags.mrsDelvileApproval = true; } },
       { text: "'Then your son must choose between us.'", effect: (gs) => { gs.flags.mrsDelvileApproval = false; } }
     ]
   },
@@ -845,7 +845,7 @@ const SCENES = [
     text: "'Miss Beverley. The name of Delvile has descended unsullied for centuries. I will not see it bartered, nor bent to suit a fortune - however large. You will understand a father's duty.'",
     character: 'elderdelvile',
     choices: [
-      { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => { gs.stats.virtue += 1; } },
+      { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => {} },
       { text: "'A name is not worth a son's happiness.'", effect: (gs) => {} }
     ]
   },
@@ -856,7 +856,7 @@ const SCENES = [
     condition: (gs) => gs.suitors.delvile >= 1,
     choices: [
       { text: "'Yes. I will be yours, whatever the cost.'", effect: (gs) => { gs.flags.agreedSecretMarriage = true; gs.stats.hearts += 1; } },
-      { text: "'Not in secret. I will not begin in shame.'", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "'Not in secret. I will not begin in shame.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   { // Stage gate: breaking-point -> chase, else -> wish menu. Routes on continue.
