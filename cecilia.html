@@ -645,12 +645,14 @@ let choiceIdx = 0;
 let currentScene = null;
 let currentEndingType = null;
 let mgReturnIdx = 0;
+let chaseReturnIdx = 0;   // scene index to resume at (the wish menu) after surviving the chase
 let choiceStartY = 0;   // y where the choice list begins (set by drawDialogue so choices never overlap the spoken line)
 
 let stats = { hearts: 0, gold: 10000, virtue: 6 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
 let flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
-              sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
+              sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
+              caughtDelvile: false };
 let mg = null;
 
 // === PURE DECISION LOGIC (no side effects; testable via window.Cecilia) ===
@@ -659,7 +661,8 @@ function blankGS() {
     stats:   { hearts: 0, gold: 10000, virtue: 6 },
     suitors: { delvile: 0, monckton: 0, floyer: 0, arnott: 0 },
     flags:   { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
-               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false }
+               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
+               caughtDelvile: false }
   };
 }
 // Charity gift: worthy lifts virtue at small cost; vice/Harrel costs more and corrodes virtue.
@@ -671,16 +674,17 @@ function applyGift(gs, kind, cost) {
 }
 // Virtue is a 0..6 gauge: clamp after any change so the 6 HUD pips stay honest.
 function clampVirtue(gs) { gs.stats.virtue = Math.max(0, Math.min(6, gs.stats.virtue)); }
-// Breaking point: lost virtue, lost love, OR squandered fortune all push toward the crisis chase.
+// Breaking point: lost virtue OR squandered fortune means a failed chase is lethal.
+// (hearts no longer gates this — the chase runs for everyone now; see resolveChase)
 function shouldBreakDown(gs) {
-  return gs.stats.virtue <= 2 || gs.stats.hearts === 0 || gs.stats.gold <= 3000;
+  return gs.stats.virtue <= 2 || gs.stats.gold <= 3000;
 }
 // Stage 2 wish menu -> ending key.
 function resolveWish(wish, gs) {
   const s = gs.stats, su = gs.suitors, f = gs.flags;
   switch (wish) {
     case 'delvile':
-      return (f.mrsDelvileApproval && (su.delvile >= 4 || f.agreedSecretMarriage)) ? 'true_love' : 'name_condition';
+      return (f.mrsDelvileApproval && (su.delvile >= 4 || f.agreedSecretMarriage || f.caughtDelvile)) ? 'true_love' : 'name_condition';
     case 'independence':
       // Gold is in real pounds (fortune starts at £10,000). Independence = keeping the bulk of it:
       // £9000+ tolerates modest alms to the worthy (£25 each) but not a Harrel bailout or spendthrift indulgence.
@@ -699,6 +703,14 @@ function resolveBreakpoint(caught, gs) {
   const su = gs.suitors, f = gs.flags;
   const redeemable = (su.delvile >= 4 || f.agreedSecretMarriage) && f.mrsDelvileApproval;
   return redeemable ? 'survival' : 'death';
+}
+// Chase outcome routing: the chase ALWAYS plays. Catching Delvile, or merely
+// not being in breakdown, means she survives and proceeds to the wish menu.
+// Only a broken-and-unredeemable player who fails the chase dies.
+function resolveChase(caught, gs) {
+  if (caught) return 'wish';
+  if (!shouldBreakDown(gs)) return 'wish';
+  return resolveBreakpoint(false, gs) === 'death' ? 'death' : 'wish';
 }
 // Chase catchability: higher = easier to catch Delvile. Range roughly [0.5, ~3].
 function chaseDifficulty(gs) {
@@ -863,8 +875,8 @@ const SCENES = [
     bg: 'storm', speaker: '',
     text: "Cecilia returns to London, her heart and fortune alike in peril...",
     onContinue: () => {
-      if (shouldBreakDown(gameState())) { state = 'chase'; initChase(); }
-      else { currentSceneIdx++; setupScene(); }
+      chaseReturnIdx = currentSceneIdx + 1;   // the wish menu
+      state = 'chase'; initChase();
     }
   },
   { // Stage 2 wish menu (only reached if she did not break)
@@ -1650,7 +1662,7 @@ function initChase() {
     diff,                     // catchability factor
     finished: false,
     caught: false,
-    endingKey: null
+    outcome: null
   };
 }
 function updateChase() {
@@ -1685,12 +1697,13 @@ function updateChase() {
     if (chase.reach >= 100) { chase.caught = true; chase.finished = true; }
     else if (chase.overtaken >= 100) { chase.caught = false; chase.finished = true; }
     if (chase.finished) {
-      chase.endingKey = resolveBreakpoint(chase.caught, gameState());
+      if (chase.caught) flags.caughtDelvile = true;
+      chase.outcome = resolveChase(chase.caught, gameState());
       playSound(chase.caught ? 'victory' : 'hurt');
     }
   }
 }
-function chaseResultEnding() { return chase ? chase.endingKey : null; }
+function chaseResultEnding() { return chase ? chase.outcome : null; }
 function drawChase() {
   if (chase.phase === 1) {
     fillRect(0, 0, W, H, C.n);                       // night streets
@@ -1773,7 +1786,8 @@ function update() {
   } else if (state === 'chase') {
     updateChase();
     if (chase.finished && (keyPressed('Space') || keyPressed('Enter'))) {
-      chooseEnding(chase.endingKey);
+      if (chase.outcome === 'death') chooseEnding('death');
+      else { state = 'scene'; currentSceneIdx = chaseReturnIdx; setupScene(); }
     }
   } else if (state === 'ending') {
     if (textIdx < fullText.length) {
@@ -1863,7 +1877,7 @@ function gameLoop() {
 // === TEST SEAM: pure logic + a live-state view for browser-driven tests ===
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
-  blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, chaseDifficulty,
+  blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, resolveChase, chaseDifficulty,
   resolveSceneText, visibleChoices, gameState, SCENES, clampVirtue,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
