@@ -1866,7 +1866,7 @@ function gameLoop() {
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
   blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, chaseDifficulty,
-  resolveSceneText, visibleChoices, gameState,
+  resolveSceneText, visibleChoices, gameState, SCENES,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
   endingKeys: Object.keys(ENDINGS),
