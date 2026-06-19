@@ -647,7 +647,7 @@ let currentEndingType = null;
 let mgReturnIdx = 0;
 let choiceStartY = 0;   // y where the choice list begins (set by drawDialogue so choices never overlap the spoken line)
 
-let stats = { hearts: 0, gold: 10000, virtue: 3 };
+let stats = { hearts: 0, gold: 10000, virtue: 6 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
 let flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
@@ -656,7 +656,7 @@ let mg = null;
 // === PURE DECISION LOGIC (no side effects; testable via window.Cecilia) ===
 function blankGS() {
   return {
-    stats:   { hearts: 0, gold: 10000, virtue: 3 },
+    stats:   { hearts: 0, gold: 10000, virtue: 6 },
     suitors: { delvile: 0, monckton: 0, floyer: 0, arnott: 0 },
     flags:   { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
                sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false }
@@ -664,12 +664,13 @@ function blankGS() {
 }
 // Charity gift: worthy lifts virtue at small cost; vice/Harrel costs more and corrodes virtue.
 function applyGift(gs, kind, cost) {
-  // Costs are in real pounds: a worthy cause needs only a small alms (£25);
-  // a spendthrift demands a ruinous sum (£1000+). `cost` lets the minigame pass each target's amount.
-  if (kind === 'worthy')   { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 25 : cost)); gs.stats.virtue += 1; }
-  else if (kind === 'unworthy') { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 1500 : cost)); gs.stats.virtue = Math.max(0, gs.stats.virtue - 1); }
+  if (kind === 'worthy')        { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 25 : cost)); gs.stats.virtue += 1; }
+  else if (kind === 'unworthy') { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 1500 : cost)); gs.stats.virtue -= 1; }
+  clampVirtue(gs);
   return gs;
 }
+// Virtue is a 0..6 gauge: clamp after any change so the 6 HUD pips stay honest.
+function clampVirtue(gs) { gs.stats.virtue = Math.max(0, Math.min(6, gs.stats.virtue)); }
 // Breaking point: lost virtue, lost love, OR squandered fortune all push toward the crisis chase.
 function shouldBreakDown(gs) {
   return gs.stats.virtue <= 2 || gs.stats.hearts === 0 || gs.stats.gold <= 3000;
@@ -952,7 +953,7 @@ function setupScene() {
   choiceIdx = 0;
 }
 function resetGame() {
-  stats = { hearts: 0, gold: 10000, virtue: 3 };
+  stats = { hearts: 0, gold: 10000, virtue: 6 };
   suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
   flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
             sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
@@ -1863,7 +1864,7 @@ function gameLoop() {
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
   blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, chaseDifficulty,
-  resolveSceneText, visibleChoices, gameState, SCENES,
+  resolveSceneText, visibleChoices, gameState, SCENES, clampVirtue,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
   endingKeys: Object.keys(ENDINGS),
