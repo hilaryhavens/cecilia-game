@@ -645,45 +645,53 @@ let choiceIdx = 0;
 let currentScene = null;
 let currentEndingType = null;
 let mgReturnIdx = 0;
+let chaseReturnIdx = 0;   // scene index to resume at (the wish menu) after surviving the chase
 let choiceStartY = 0;   // y where the choice list begins (set by drawDialogue so choices never overlap the spoken line)
 
-let stats = { hearts: 0, gold: 10000, virtue: 3 };
+let stats = { hearts: 0, gold: 10000, virtue: 6 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
 let flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
-              sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
+              sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
+              caughtDelvile: false };
 let mg = null;
 
 // === PURE DECISION LOGIC (no side effects; testable via window.Cecilia) ===
 function blankGS() {
   return {
-    stats:   { hearts: 0, gold: 10000, virtue: 3 },
+    stats:   { hearts: 0, gold: 10000, virtue: 6 },
     suitors: { delvile: 0, monckton: 0, floyer: 0, arnott: 0 },
     flags:   { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
-               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false }
+               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
+               caughtDelvile: false }
   };
 }
 // Charity gift: worthy lifts virtue at small cost; vice/Harrel costs more and corrodes virtue.
 function applyGift(gs, kind, cost) {
-  // Costs are in real pounds: a worthy cause needs only a small alms (£25);
-  // a spendthrift demands a ruinous sum (£1000+). `cost` lets the minigame pass each target's amount.
-  if (kind === 'worthy')   { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 25 : cost)); gs.stats.virtue += 1; }
-  else if (kind === 'unworthy') { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 1500 : cost)); gs.stats.virtue = Math.max(0, gs.stats.virtue - 1); }
+  if (kind === 'worthy')        { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 25 : cost)); gs.stats.virtue += 1; }
+  else if (kind === 'unworthy') { gs.stats.gold = Math.max(0, gs.stats.gold - (cost == null ? 1500 : cost)); gs.stats.virtue -= 1; }
+  clampVirtue(gs);
   return gs;
 }
-// Breaking point: lost virtue, lost love, OR squandered fortune all push toward the crisis chase.
+// Virtue is a 0..6 gauge: clamp after any change so the 6 HUD pips stay honest.
+function clampVirtue(gs) { gs.stats.virtue = Math.max(0, Math.min(6, gs.stats.virtue)); }
+// LOVE is a 0..5 gauge (HUD shows 5 heart slots): clamp after any change.
+function clampHearts(gs) { gs.stats.hearts = Math.max(0, Math.min(5, gs.stats.hearts)); }
+// Breaking point: lost virtue OR squandered fortune means a failed chase is lethal.
+// (hearts no longer gates this — the chase runs for everyone now; see resolveChase)
 function shouldBreakDown(gs) {
-  return gs.stats.virtue <= 2 || gs.stats.hearts === 0 || gs.stats.gold <= 3000;
+  return gs.stats.virtue <= 2 || gs.stats.gold <= 3000;
 }
 // Stage 2 wish menu -> ending key.
 function resolveWish(wish, gs) {
   const s = gs.stats, su = gs.suitors, f = gs.flags;
   switch (wish) {
     case 'delvile':
-      return (f.mrsDelvileApproval && (su.delvile >= 4 || f.agreedSecretMarriage)) ? 'true_love' : 'name_condition';
+      return (f.mrsDelvileApproval && s.hearts >= 2 && (su.delvile >= 4 || f.agreedSecretMarriage || f.caughtDelvile)) ? 'true_love' : 'name_condition';
     case 'independence':
       // Gold is in real pounds (fortune starts at £10,000). Independence = keeping the bulk of it:
-      // £9000+ tolerates modest alms to the worthy (£25 each) but not a Harrel bailout or spendthrift indulgence.
-      return (s.gold >= 9000 && s.virtue >= 4) ? 'independence' : 'faded';
+      // £7500+ tolerates modest alms to the worthy (£25 each) and even survives one Harrel bailout
+      // (−£3000), but a spendthrift's squandering still forecloses it.
+      return (s.gold >= 7500 && s.virtue >= 4) ? 'independence' : 'faded';
     case 'arnott':
       return (su.arnott >= 2 || f.kindToArnott) ? 'fortune_married' : 'quiet_spinster';
     case 'monckton':
@@ -699,6 +707,14 @@ function resolveBreakpoint(caught, gs) {
   const redeemable = (su.delvile >= 4 || f.agreedSecretMarriage) && f.mrsDelvileApproval;
   return redeemable ? 'survival' : 'death';
 }
+// Chase outcome routing: the chase ALWAYS plays. Catching Delvile, or merely
+// not being in breakdown, means she survives and proceeds to the wish menu.
+// Only a broken-and-unredeemable player who fails the chase dies.
+function resolveChase(caught, gs) {
+  if (caught) return 'wish';
+  if (!shouldBreakDown(gs)) return 'wish';
+  return resolveBreakpoint(false, gs) === 'death' ? 'death' : 'wish';
+}
 // Chase catchability: higher = easier to catch Delvile. Range roughly [0.5, ~3].
 function chaseDifficulty(gs) {
   const su = gs.suitors, f = gs.flags, s = gs.stats;
@@ -708,6 +724,7 @@ function chaseDifficulty(gs) {
   if (f.mrsDelvileApproval) c += 0.3;
   c += Math.min(s.virtue, 6) * 0.05;
   c += Math.min(s.gold, 12000) * 0.00003;
+  c += Math.min(s.hearts, 5) * 0.15;   // love makes her press harder after him
   return Math.max(0.5, c);
 }
 // Resolve a scene's text whether it's a string or a function of game state.
@@ -741,7 +758,7 @@ const SCENES = [
     text: "What? make it over to a scoundrel? no, no, won't suffer it; sha'n't be, sha'n't be - don't marry proper! I'll have a care whom ye choose!'",
     character: 'briggs',
     choices: [
-      { text: "'Sir, I shall choose with wisdom.'", effect: (gs) => { gs.stats.virtue += 1; } },
+      { text: "'Sir, I shall choose with wisdom.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } },
       { text: "'Sir, I shall consult you on all matters.'", effect: (gs) => { gs.stats.gold += 1000; } },
       { text: "'Sir, I am mistress of my own fate!'", effect: (gs) => { gs.stats.hearts += 0; } }
     ]
@@ -751,9 +768,9 @@ const SCENES = [
     text: "'Dear Miss Beverley! How delightful! Pray allow me to introduce my son, Mortimer - and our family friend, Mr. Monckton.'",
     character: 'mrsdelvile',
     choices: [
-      { text: "Greet Mortimer Delvile warmly.", effect: (gs) => { gs.suitors.delvile += 1; } },
-      { text: "Engage instead Mr. Monckton in conversation.", effect: (gs) => { gs.suitors.monckton += 1; } },
-      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "Greet Mortimer Delvile warmly.", effect: (gs) => { gs.suitors.delvile += 1; gs.stats.hearts += 1; clampHearts(gs); } },
+      { text: "Engage instead Mr. Monckton in conversation.", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -761,8 +778,8 @@ const SCENES = [
     text: "'My dear Miss Beverley, I confess I am most eager to be of service. Your late uncle trusted me implicitly - perhaps we might discuss... arrangements?'",
     character: 'monckton',
     choices: [
-      { text: "'How kind. Tell me more.'", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; } },
-      { text: "'Sir, I am not for sale!'", effect: (gs) => { gs.stats.virtue += 1; gs.suitors.monckton -= 1; } },
+      { text: "'How kind. Tell me more.'", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "'Sir, I am not for sale!'", effect: (gs) => { gs.stats.virtue += 1; gs.suitors.monckton -= 1; clampVirtue(gs); } },
       { text: "'Sir, your concern is noted.'", effect: (gs) => {} }
     ]
   },
@@ -771,9 +788,9 @@ const SCENES = [
     text: "'Miss Beverley, I must be honest with you. I love you - but my family name is precious to me. I cannot take yours. Yet I cannot bear to see you sacrificed to mercenary schemes.'",
     character: 'delvile',
     choices: [
-      { text: "'Mortimer, your honesty moves me deeply.'", effect: (gs) => { gs.suitors.delvile += 2; gs.stats.hearts += 1; } },
-      { text: "'I am honored by your regard.'", effect: (gs) => { gs.suitors.delvile += 1; } },
-      { text: "'Then we are at an impasse.'", effect: (gs) => {} }
+      { text: "'Mortimer, your honesty moves me deeply.'", effect: (gs) => { gs.suitors.delvile += 2; gs.stats.hearts += 1; clampHearts(gs); } },
+      { text: "'I am honored by your regard.'", effect: (gs) => { gs.suitors.delvile += 1; gs.stats.hearts += 1; clampHearts(gs); } },
+      { text: "'Then we are at an impasse.'", effect: (gs) => { gs.stats.hearts -= 1; clampHearts(gs); } }
     ]
   },
   {
@@ -782,7 +799,7 @@ const SCENES = [
     character: 'harrel',
     choices: [
       { text: "'I am sorry to hear of your troubles, sir.'", effect: (gs) => { gs.flags.sympathizedWithHarrel = true; gs.stats.virtue += 0; } },
-      { text: "'Perhaps economy would serve the household better.'", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "'Perhaps economy would serve the household better.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -790,8 +807,8 @@ const SCENES = [
     text: "'Miss Beverley - that is - I had meant to say - the weather, and your eyes, are both uncommonly fine today!' He treads upon your hem.",
     character: 'floyer',
     choices: [
-      { text: "Laugh kindly and encourage him.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; } },
-      { text: "Excuse yourself with civility.", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "Laugh kindly and encourage him.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "Excuse yourself with civility.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -808,8 +825,8 @@ const SCENES = [
     text: "'You are rich, child. But riches are a trust, not a toy. Will you squander on flatterers, or relieve the wretched who have no voice?'",
     character: 'albany',
     choices: [
-      { text: "'Teach me to do good with what I have.'", effect: (gs) => { gs.stats.virtue += 2; } },
-      { text: "'Charity is a private matter, sir.'", effect: (gs) => { gs.stats.virtue -= 1; } }
+      { text: "'Teach me to do good with what I have.'", effect: (gs) => { gs.stats.virtue += 2; clampVirtue(gs); } },
+      { text: "'Charity is a private matter, sir.'", effect: (gs) => { gs.stats.virtue -= 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -819,8 +836,8 @@ const SCENES = [
       : "'I am desperate, Miss Beverley! Lend me three thousand pounds, or my blood is upon your hands!'",
     character: 'harrel',
     choices: [
-      { text: "Give him the money to quiet the scandal.", effect: (gs) => { gs.stats.gold = Math.max(0, gs.stats.gold - 3000); gs.stats.virtue -= 1; gs.flags.gaveMoneyToHarrel = true; } },
-      { text: "Refuse - his ruin is of his own making.", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "Give him the money to quiet the scandal.", effect: (gs) => { gs.stats.gold = Math.max(0, gs.stats.gold - 3000); gs.stats.virtue -= 1; gs.flags.gaveMoneyToHarrel = true; clampVirtue(gs); } },
+      { text: "Refuse - his ruin is of his own making.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -835,8 +852,8 @@ const SCENES = [
       : "'Miss Beverley. I will be plain. There can be no union that costs my family its name.'",
     character: 'mrsdelvile',
     choices: [
-      { text: "'I would never ask him to dishonour his name.'", effect: (gs) => { gs.flags.mrsDelvileApproval = true; gs.stats.virtue += 1; } },
-      { text: "'Then your son must choose between us.'", effect: (gs) => { gs.flags.mrsDelvileApproval = false; } }
+      { text: "'I would never ask him to dishonour his name.'", effect: (gs) => { gs.flags.mrsDelvileApproval = true; gs.stats.hearts += 1; clampHearts(gs); } },
+      { text: "'Then your son must choose between us.'", effect: (gs) => { gs.flags.mrsDelvileApproval = false; gs.stats.hearts -= 1; clampHearts(gs); } }
     ]
   },
   { // Elder Mr. Delvile asserts the family's name-pride
@@ -844,7 +861,7 @@ const SCENES = [
     text: "'Miss Beverley. The name of Delvile has descended unsullied for centuries. I will not see it bartered, nor bent to suit a fortune - however large. You will understand a father's duty.'",
     character: 'elderdelvile',
     choices: [
-      { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => { gs.stats.virtue += 1; } },
+      { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => {} },
       { text: "'A name is not worth a son's happiness.'", effect: (gs) => {} }
     ]
   },
@@ -854,16 +871,16 @@ const SCENES = [
     character: 'delvile',
     condition: (gs) => gs.suitors.delvile >= 1,
     choices: [
-      { text: "'Yes. I will be yours, whatever the cost.'", effect: (gs) => { gs.flags.agreedSecretMarriage = true; gs.stats.hearts += 1; } },
-      { text: "'Not in secret. I will not begin in shame.'", effect: (gs) => { gs.stats.virtue += 1; } }
+      { text: "'Yes. I will be yours, whatever the cost.'", effect: (gs) => { gs.flags.agreedSecretMarriage = true; gs.stats.hearts += 1; clampHearts(gs); } },
+      { text: "'Not in secret. I will not begin in shame.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); gs.stats.hearts -= 1; clampHearts(gs); } }
     ]
   },
   { // Stage gate: breaking-point -> chase, else -> wish menu. Routes on continue.
     bg: 'storm', speaker: '',
     text: "Cecilia returns to London, her heart and fortune alike in peril...",
     onContinue: () => {
-      if (shouldBreakDown(gameState())) { state = 'chase'; initChase(); }
-      else { currentSceneIdx++; setupScene(); }
+      chaseReturnIdx = currentSceneIdx + 1;   // the wish menu
+      state = 'chase'; initChase();
     }
   },
   { // Stage 2 wish menu (only reached if she did not break)
@@ -952,10 +969,11 @@ function setupScene() {
   choiceIdx = 0;
 }
 function resetGame() {
-  stats = { hearts: 0, gold: 10000, virtue: 3 };
+  stats = { hearts: 0, gold: 10000, virtue: 6 };
   suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
   flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
-            sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false };
+            sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
+            caughtDelvile: false };
   currentSceneIdx = 0;
   choiceIdx = 0;
   currentEndingType = null;
@@ -1196,9 +1214,6 @@ function drawBackground(type) {
         if (tw < 60) fillRect(sx, sy, 3, 3, C.w);
         if (tw === 0) fillRect(sx-1, sy-1, 5, 5, C.w);
       }
-      // Crescent moon
-      fillRect(80, 60, 40, 40, C.c);
-      fillRect(95, 50, 40, 40, '#000020');
       // Ground/trees silhouette
       fillRect(0, H - 100, W, 100, C.d);
       for (let i = 0; i < 5; i++) {
@@ -1652,7 +1667,7 @@ function initChase() {
     diff,                     // catchability factor
     finished: false,
     caught: false,
-    endingKey: null
+    outcome: null
   };
 }
 function updateChase() {
@@ -1670,7 +1685,7 @@ function updateChase() {
     for (const o of chase.obstacles) {
       o.x -= 6;
       if (!o.hit && o.x < 90 && o.x + o.w > 40 && Math.abs(o.y - chase.laneY) < 40) {
-        o.hit = true; chase.gap += 40; playSound('hurt');   // crash widens the gap
+        o.hit = true; chase.gap += 40; chase.shakeUntil = chase.t + 18; playSound('hurt');   // crash widens the gap
       }
     }
     chase.obstacles = chase.obstacles.filter(o => o.x > -50);
@@ -1687,41 +1702,96 @@ function updateChase() {
     if (chase.reach >= 100) { chase.caught = true; chase.finished = true; }
     else if (chase.overtaken >= 100) { chase.caught = false; chase.finished = true; }
     if (chase.finished) {
-      chase.endingKey = resolveBreakpoint(chase.caught, gameState());
+      if (chase.caught) flags.caughtDelvile = true;
+      chase.outcome = resolveChase(chase.caught, gameState());
       playSound(chase.caught ? 'victory' : 'hurt');
     }
   }
 }
-function chaseResultEnding() { return chase ? chase.endingKey : null; }
+function chaseResultEnding() { return chase ? chase.outcome : null; }
+// --- chase art helpers (resolution-relative) ---
+function drawHorse(x, y, t, s) {
+  const step = Math.sin(t * 0.4) > 0 ? 1 : -1;   // two-stride gallop
+  fillRect(x, y, 18*s, 8*s, C.a);                 // body
+  fillRect(x + 17*s, y - 4*s, 6*s, 8*s, C.a);     // neck
+  fillRect(x + 22*s, y - 2*s, 7*s, 5*s, C.a);     // head
+  fillRect(x + 16*s, y - 5*s, 3*s, 6*s, C.k);     // mane
+  fillRect(x - 3*s, y + 1*s, 4*s, 7*s, C.k);      // tail
+  fillRect(x + 4*s, y + 8*s, 3*s, 8*s + step*2*s, C.L);   // foreleg
+  fillRect(x + 14*s, y + 8*s, 3*s, 8*s - step*2*s, C.L);  // hindleg
+}
+function drawCarriageRig(x, cabY, t, who, facing) {
+  const s = Math.max(2, Math.round(H / 120));
+  drawHorse(x + facing*30*s, cabY + 10*s, t, s);                    // team out front (in travel direction)
+  fillRect(x + (facing > 0 ? 26*s : -2*s), cabY + 12*s, 2*s, 26*s, C.k); // pole
+  fillRect(x, cabY, 30*s, 20*s, who === 'cecilia' ? C.P : C.L);     // cab body
+  fillRect(x + 2*s, cabY + 4*s, 6*s, 6*s, C.e);                     // lit side lamp
+  for (const wx of [x + 4*s, x + 24*s]) {                            // spoked wheels
+    fillRect(wx, cabY + 20*s, 8*s, 8*s, C.k);
+    fillRect(wx + 2*s, cabY + 22*s, 4*s, 4*s, C.o);
+  }
+  const sp = who === 'cecilia' ? SP.cecilia : SP.delvile;           // recognizable occupant
+  drawSprite(sp, x + 6*s, cabY - 14*s, Math.max(2, s - 1), C, true);
+}
+function drawNightStreet(t) {
+  fillRect(0, 0, W, H, C.n);                                   // night sky
+  fillRect(W - 80, 30, 30, 30, C.c);                          // moon
+  for (let i = 0; i < 6; i++) fillRect(i * (W/6), H*0.45, W/6 - 8, H*0.22, C.u); // terrace
+  fillRect(W*0.55, H*0.30, 16, 40, C.u);                      // church steeple
+  for (let i = 0; i < 8; i++) fillRect(20 + i*(W/8), H*0.5 + (i%2)*12, 6, 8, C.e); // lit windows
+  for (const lx of [W*0.22, W*0.7]) { fillRect(lx, H*0.62, 4, 26, C.u); fillRect(lx - 6, H*0.58, 14, 12, C.e); } // gas lamps
+  fillRect(0, H*0.66, W, H*0.34, C.a);                        // road
+  for (let x = -(t*6) % 120; x < W; x += 120) fillRect(x, H*0.82, 16, 6, C.k); // cobbles
+}
+function drawDeliriumField(t, reachFrac, overFrac) {
+  fillRect(0, 0, W, H, C.I);                       // pulsing blood-red base
+  const cx = W/2, cy = H*0.42;
+  ctx.strokeStyle = 'rgba(255,90,90,0.10)'; ctx.lineWidth = 2;   // concentric warp rings
+  for (let i = 1; i <= 6; i++) { ctx.beginPath(); ctx.arc(cx, cy, i*34, 0, Math.PI*2); ctx.stroke(); }
+  for (let i = 0; i < 40; i++) fillRect((i*53 + t*3) % W, (i*71) % H, 3, 3, C.r);   // drifting motes
+  const press = overFrac * 30;                     // looming gossip-faces, pressing in as overtaken rises
+  ctx.fillStyle = 'rgba(225,210,220,0.28)';
+  ctx.beginPath(); ctx.ellipse(40 + press, H*0.6, 34, 42, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(W - 40 - press, H*0.62, 38, 46, 0, 0, Math.PI*2); ctx.fill();
+  const vg = ctx.createRadialGradient(cx, H/2, H*0.3, cx, H/2, H*0.75);   // vignette
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
 function drawChase() {
   if (chase.phase === 1) {
-    fillRect(0, 0, W, H, C.n);                       // night streets
-    for (let i = 0; i < 6; i++) fillRect((i * 160 - (chase.t * 6) % 160), 80 + (i % 2) * 30, 30, 6, C.u);
-    // road
-    fillRect(0, 100, W, 380, C.a);
-    for (let x = -(chase.t * 6) % 120; x < W; x += 120) fillRect(x, 280, 60, 8, C.e);
-    // Delvile's carriage ahead (position from gap)
-    const dx = Math.min(W - 80, W - 80 - Math.max(0, chase.gap));
-    fillRect(dx, 250, 70, 50, C.L); fillRect(dx + 10, 235, 40, 20, C.t);
-    // Cecilia's carriage
-    fillRect(50, chase.laneY, 70, 50, C.m); fillRect(60, chase.laneY - 14, 40, 18, C.p);
+    drawNightStreet(chase.t);
+    const sh = (chase.t < (chase.shakeUntil || 0)) ? (Math.random()*6 - 3) : 0;
+    // Delvile ahead on a fixed mid-road lane; x derived from the gap
+    const dx = Math.min(W - 140, W - 140 - Math.max(0, chase.gap));
+    drawCarriageRig(dx + sh, H*0.55, chase.t, 'delvile', -1);
+    // Cecilia (player) steers vertically via chase.laneY
+    drawCarriageRig(40 + sh, chase.laneY, chase.t, 'cecilia', 1);
     for (const o of chase.obstacles) drawSprite(SP.scandal, o.x, o.y, 3);
     drawText('CHASE HIS CARRIAGE  ↑↓ STEER', W/2, 30, C.w, 1, 'center');
-    // gap meter
     fillRect(W - 260, 60, 230, 18, C.k);
     fillRect(W - 258, 62, 226 * (1 - Math.min(1, Math.max(0, chase.gap) / 320)), 14, C.v);
     drawText('CLOSING', W - 255, 62, C.w, 1, 'left', false);
   } else {
-    // Foot chase: distorted, tinted delirium
-    fillRect(0, 0, W, H, C.I);
+    const reachFrac = Math.min(1, chase.reach / 100);
+    const overFrac  = Math.min(1, chase.overtaken / 100);
+    drawDeliriumField(chase.t, reachFrac, overFrac);
     const shake = Math.sin(chase.t * 0.5) * 4;
-    for (let i = 0; i < 40; i++) fillRect((i * 53 + chase.t * 3) % W, (i * 71) % H, 3, 3, C.r);
-    drawSprite(SP.ceciliaRun, W/2 - 30 + shake, 300 + Math.sin(chase.t * 0.3) * 6, 4);
+    // Mortimer ahead: sharpens (alpha) and drifts toward centre as reach rises; dissolves with overtaken
+    const dAlpha = Math.max(0, reachFrac - overFrac*0.6);
+    const dmx = W*0.7 - reachFrac * W*0.18;
+    ctx.save(); ctx.globalAlpha = 0.25 + 0.6*dAlpha;
+    drawSprite(SP.delvile, dmx, H*0.42, 3, C, true);
+    ctx.restore();
+    // Cecilia running (her portrait), vertical bob + motion trail
+    const cyB = H*0.42 + Math.sin(chase.t * 0.3) * 6;
+    ctx.save(); ctx.globalAlpha = 0.25; drawSprite(SP.cecilia, W*0.34 - 20 + shake, cyB, 4, C, false); ctx.restore();
+    ctx.save(); ctx.globalAlpha = 0.5;  drawSprite(SP.cecilia, W*0.34 - 8 + shake,  cyB, 4, C, false); ctx.restore();
+    drawSprite(SP.cecilia, W*0.34 + shake, cyB, 4, C, true);
     drawText('REACH HIM!  →/SPACE', W/2, 30, C.w, 2, 'center');
-    // reach meter (good) and overtaken meter (bad)
-    fillRect(80, 120, 300, 22, C.k); fillRect(82, 122, 296 * (chase.reach / 100), 18, C.v);
+    // meters: REACH gold, OVERTAKEN dark-red
+    fillRect(80, 120, 300, 22, C.k); fillRect(82, 122, 296 * reachFrac, 18, C.g);
     drawText('REACH DELVILE', 90, 124, C.w, 1, 'left', false);
-    fillRect(80, 150, 300, 22, C.k); fillRect(82, 152, 296 * (chase.overtaken / 100), 18, C.F);
+    fillRect(80, 150, 300, 22, C.k); fillRect(82, 152, 296 * overFrac, 18, C.F);
     drawText('OVERTAKEN', 90, 154, C.w, 1, 'left', false);
   }
 }
@@ -1775,7 +1845,8 @@ function update() {
   } else if (state === 'chase') {
     updateChase();
     if (chase.finished && (keyPressed('Space') || keyPressed('Enter'))) {
-      chooseEnding(chase.endingKey);
+      if (chase.outcome === 'death') chooseEnding('death');
+      else { state = 'scene'; currentSceneIdx = chaseReturnIdx; setupScene(); }
     }
   } else if (state === 'ending') {
     if (textIdx < fullText.length) {
@@ -1865,8 +1936,8 @@ function gameLoop() {
 // === TEST SEAM: pure logic + a live-state view for browser-driven tests ===
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
-  blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, chaseDifficulty,
-  resolveSceneText, visibleChoices, gameState,
+  blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, resolveChase, chaseDifficulty,
+  resolveSceneText, visibleChoices, gameState, SCENES, clampVirtue, clampHearts,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
   endingKeys: Object.keys(ENDINGS),
