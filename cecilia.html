@@ -689,8 +689,9 @@ function resolveWish(wish, gs) {
       return (f.mrsDelvileApproval && s.hearts >= 2 && (su.delvile >= 4 || f.agreedSecretMarriage || f.caughtDelvile)) ? 'true_love' : 'name_condition';
     case 'independence':
       // Gold is in real pounds (fortune starts at £10,000). Independence = keeping the bulk of it:
-      // £9000+ tolerates modest alms to the worthy (£25 each) but not a Harrel bailout or spendthrift indulgence.
-      return (s.gold >= 9000 && s.virtue >= 4) ? 'independence' : 'faded';
+      // £7500+ tolerates modest alms to the worthy (£25 each) and even survives one Harrel bailout
+      // (−£3000), but a spendthrift's squandering still forecloses it.
+      return (s.gold >= 7500 && s.virtue >= 4) ? 'independence' : 'faded';
     case 'arnott':
       return (su.arnott >= 2 || f.kindToArnott) ? 'fortune_married' : 'quiet_spinster';
     case 'monckton':
