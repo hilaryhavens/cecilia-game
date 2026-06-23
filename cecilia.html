@@ -518,21 +518,22 @@ SP.coin = [
   "....gggg........",
 ];
 
-// Money bag - cinched tan sack with a gold £ on the belly (fortune/inheritance motif)
+// Money bag - rich tan sack with a bold gold £ on the belly (fortune/inheritance
+// motif). Body darkened to 'q' so the gold £ reads with strong contrast.
 SP.moneybag = [
   "................",
   "......kkkk......",
   "......kttk......",
   ".....kttttk.....",
-  "....kKKKKKKk....",
-  "...kKKKgggKKk...",
-  "..kKKKKgKKKKKk..",
-  "..kKKKKgKKKKKk..",
-  "..kKKgggggKKKk..",
-  "..kKKKKgKKKKKk..",
-  "..kKKKKgKKKKKk..",
-  "...kKKgggggKk...",
-  "....kKKKKKKk....",
+  "....kqqqqqqk....",
+  "...kqqqgggqqk...",
+  "..kqqqqgqqqqqk..",
+  "..kqqqqgqqqqqk..",
+  "..kqqgggggqqqk..",
+  "..kqqqqgqqqqqk..",
+  "..kqqqqgqqqqqk..",
+  "...kqqgggggqk...",
+  "....kqqqqqqk....",
   ".....kkkkkk.....",
   "................",
   "................",
@@ -1070,27 +1071,45 @@ const NF = { // note frequencies (Hz)
   C5:523.25, D5:587.33, Eb5:622.25, F5:698.46, G5:783.99, Ab5:830.61, Bb5:932.33, C6:1046.50
 };
 const MSPB = 60 / 132; // 132 BPM, Allegro (rage aria)
+// Full A-section of the da-capo aria (the part heard twice via da capo), looped:
+//   ritornello → vocal statement 1 (+ cadential melisma on "crudeltà") →
+//   ritornello fragment → vocal statement 2 → final cadence → (loop).
 const MELODY = [
-  // --- A) Opening ritornello: descending C-minor cascade from the top, then a turn ---
+  // --- Opening ritornello: descending C-minor cascade from the top, then a turn ---
   ['C6',0.25],['Bb5',0.25],['Ab5',0.25],['G5',0.25],['F5',0.25],['Eb5',0.25],['D5',0.25],['C5',0.25],
   ['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],['C4',0.25],['D4',0.25],
   ['Eb4',0.25],['F4',0.25],['G4',0.25],['Ab4',0.25],['Bb4',0.25],['C5',0.25],['D5',0.25],['Eb5',0.25],
   ['D5',0.5],['C5',0.5],['G4',1],
-  // --- B) Vocal theme ---
+  // --- Vocal statement 1 ---
   // "Em-pio, di-rò, tu sei" — opening turn, then the scale tumbles down
   ['C5',0.5],['Bb4',0.5],['C5',0.5],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.5],['D4',1],
   // "to-gli-ti a glioc-chi miei" — low line rising to the leading tone (Bn4)
   ['C4',0.5],['D4',0.5],['Eb4',0.5],['F4',0.5],['G4',0.5],['Ab4',0.5],['G4',0.5],['Bn4',0.5],
   // "sei tut-to cru-del-tà" — upper neighbour, dotted descent
   ['C5',0.5],['Eb5',0.5],['D5',0.5],['C5',0.5],['Bb4',0.5],['Ab4',0.5],['G4',0.5],['F4',0.5],
-  // cadence to tonic, breathe before the loop
+  // cadential melisma on "...crudeltà" (sixteenth-note run, turn + descent)
+  ['G4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['F4',0.25],['G4',0.25],['Ab4',0.25],
+  ['Bb4',0.25],['C5',0.25],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],
+  ['Eb4',0.5],['D4',0.5],['C4',1],['G4',1],['G4',1],   // settle, lift to dominant
+  // --- Ritornello fragment ---
+  ['G5',0.25],['F5',0.25],['Eb5',0.25],['D5',0.25],['C5',0.25],['Bb4',0.25],['Ab4',0.25],['G4',0.25],
+  ['F4',0.5],['Eb4',0.5],['D4',1],
+  // --- Vocal statement 2 (restatement) ---
+  ['C5',0.5],['Bb4',0.5],['C5',0.5],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.5],['D4',1],
+  ['C4',0.5],['D4',0.5],['Eb4',0.5],['F4',0.5],['G4',0.5],['Ab4',0.5],['G4',0.5],['Bn4',0.5],
+  ['C5',0.5],['Eb5',0.5],['D5',0.5],['C5',0.5],['Bb4',0.5],['Ab4',0.5],['G4',0.5],['F4',0.5],
+  // final cadence to tonic, breathe before the loop
   ['G4',1],['Bn4',1],['C5',2]
 ];
-// Basso continuo: two half notes per bar — i / V, then iv-V-i at the cadence (C minor).
+// Basso continuo: two half notes per bar — i / V, with iv-V-i at the cadences (C minor).
 const BASS = [
-  ['C3',2],['G2',2],   ['C3',2],['G2',2],     // ritornello bars
+  ['C3',2],['G2',2],   ['C3',2],['G2',2],     // ritornello
   ['C3',2],['G2',2],   ['C3',2],['G2',2],     // Empio diro / togliti
-  ['F3',2],['G2',2],   ['G2',2],['C3',2]      // crudelta / cadence
+  ['F3',2],['G2',2],                          // sei tutto crudelta
+  ['C3',2],['G2',2],   ['G2',2],['C3',2],     // melisma / cadence
+  ['C3',2],['G2',2],                          // ritornello fragment
+  ['C3',2],['G2',2],   ['C3',2],['G2',2],     // statement 2: Empio / togliti
+  ['F3',2],['G2',2],   ['G2',2],['C3',2]      // crudelta / final cadence
 ];
 function buildTrack(seq){ let t=0; const ev=[]; for(const [n,d] of seq){ ev.push({f:NF[n], t, d:d*MSPB}); t+=d*MSPB; } return {ev, len:t}; }
 const M_TRACK = buildTrack(MELODY), B_TRACK = buildTrack(BASS);
