@@ -518,6 +518,26 @@ SP.coin = [
   "....gggg........",
 ];
 
+// Money bag - cinched tan sack with gold coins at the mouth (fortune/inheritance motif)
+SP.moneybag = [
+  "................",
+  ".....gggg.......",
+  "....gggggg......",
+  "....kttttk......",
+  "...kKKKKKKk.....",
+  "..kKKKKKKKKk....",
+  ".kKKKKqqKKKKk...",
+  ".kKKKqggqKKKk...",
+  ".kKKKqggqKKKk...",
+  ".kKKKKqqKKKKk...",
+  ".kKKKKKKKKKKk...",
+  "..kKKKKKKKKk....",
+  "..kKKKKKKKKk....",
+  "...kKKKKKKk.....",
+  "....kkkkkk......",
+  "................",
+];
+
 // Cloud
 SP.cloud = [
   "................",
@@ -1214,12 +1234,11 @@ function drawBackground(type) {
         if (tw < 60) fillRect(sx, sy, 3, 3, C.w);
         if (tw === 0) fillRect(sx-1, sy-1, 5, 5, C.w);
       }
-      // Ground/trees silhouette
+      // Ground + a row of money bags (fortune/inheritance motif) where trees once stood
       fillRect(0, H - 100, W, 100, C.d);
       for (let i = 0; i < 5; i++) {
-        const tx = 100 + i * 150;
-        fillRect(tx, H - 200, 30, 100, C.a);
-        fillRect(tx - 20, H - 180, 70, 50, C.v);
+        const bx = 90 + i * 150;
+        drawSprite(SP.moneybag, bx, H - 180, 5, C, true);
       }
       break;
     }
