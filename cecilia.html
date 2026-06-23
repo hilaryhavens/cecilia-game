@@ -1255,6 +1255,19 @@ function drawSashWindow(x, y, w, h) {
   fillRect(x + 2, y + Math.round(h / 3) - 1, w - 4, 2, C.w);
   fillRect(x + 2, y + Math.round(2 * h / 3) - 1, w - 4, 2, C.w);
 }
+// A little heap of gold coins spilling from the foot of a money bag.
+function drawCoinSpill(cx, gy) {
+  const coins = [
+    [cx - 22, gy - 4], [cx - 12, gy + 1], [cx - 1, gy - 5], [cx + 9, gy],
+    [cx + 19, gy - 3], [cx - 6, gy + 6], [cx + 5, gy + 6], [cx + 2, gy - 1]
+  ];
+  for (const [x, y] of coins) {
+    fillRect(x, y + 7, 12, 3, C.a);     // contact shadow
+    fillRect(x, y, 12, 8, C.x);         // coin rim (deeper gold)
+    fillRect(x + 1, y + 1, 10, 5, C.g); // coin face (gold)
+    fillRect(x + 3, y + 2, 4, 2, C.e);  // highlight
+  }
+}
 function drawBackground(type) {
   switch (type) {
     case 'title': {
@@ -1267,44 +1280,58 @@ function drawBackground(type) {
         if (tw < 60) fillRect(sx, sy, 3, 3, C.w);
         if (tw === 0) fillRect(sx-1, sy-1, 5, 5, C.w);
       }
-      // Ground + a row of money bags (fortune/inheritance motif) where trees once stood
+      // Ground + a row of money bags (fortune/inheritance motif) where trees once stood;
+      // a couple of them overflow with gold coins.
       fillRect(0, H - 100, W, 100, C.d);
       for (let i = 0; i < 5; i++) {
         const bx = 90 + i * 150;
         drawSprite(SP.moneybag, bx, H - 180, 5, C, true);
+        if (i === 1 || i === 3) drawCoinSpill(bx + 40, H - 104);   // coins overflowing in front
       }
       break;
     }
     case 'manor': {
-      fillRect(0, 0, W, H - 150, C.z);
-      fillRect(W - 120, 60, 50, 50, C.g);
-      // Hills
-      for (let i = 0; i < 3; i++) {
+      // A Palladian country seat (18th-c.): symmetrical stone facade, a projecting
+      // centre with giant pilasters under a triangular pediment, hipped roof,
+      // quoined corners and ranks of 6-over-6 sash windows.
+      fillRect(0, 0, W, H - 150, C.z);                       // sky
+      fillRect(W - 120, 60, 50, 50, C.g);                    // sun
+      for (let i = 0; i < 3; i++) {                          // hills
         const hy = H - 250 + i * 30;
         fillRect(0, hy, W, 50, i === 0 ? C.v : C.d);
       }
-      // Manor
-      const mx = 250, my = 200, mw = 300, mh = 200;
-      fillRect(mx, my, mw, mh, C.c);
-      fillRect(mx - 20, my - 30, mw + 40, 40, C.a);
-      fillRect(mx + mw - 60, my - 60, 30, 40, C.a);
-      // Door
-      fillRect(mx + mw/2 - 25, my + mh - 80, 50, 80, C.t);
-      fillRect(mx + mw/2 - 20, my + mh - 75, 40, 70, C.a);
-      fillRect(mx + mw/2 - 15, my + mh - 30, 5, 5, C.g);
-      // Windows
-      for (let i = 0; i < 3; i++) {
-        const wx = mx + 30 + i * 100;
-        fillRect(wx, my + 40, 50, 60, C.n);
-        fillRect(wx + 5, my + 45, 18, 25, C.l);
-        fillRect(wx + 27, my + 45, 18, 25, C.l);
-        fillRect(wx + 5, my + 72, 18, 25, C.l);
-        fillRect(wx + 27, my + 72, 18, 25, C.l);
+      const mw = 420, mh = 190, mx = Math.round(W / 2 - mw / 2), my = 180;
+      fillRect(mx - 6, my - 22, mw + 12, 24, C.o);           // hipped roof
+      fillRect(mx - 6, my - 2, mw + 12, 5, C.u);             // roof shadow
+      fillRect(mx, my, mw, mh, C.K);                         // stone facade
+      fillRect(mx, my, mw, 4, C.w);                          // cornice highlight
+      for (let q = 0; q < 8; q++) {                          // quoined corners
+        const qy = my + 6 + q * 22;
+        fillRect(mx, qy, 14, 12, q % 2 ? C.c : C.G);
+        fillRect(mx + mw - 14, qy, 14, 12, q % 2 ? C.c : C.G);
       }
-      // Trees
-      for (let i = 0; i < 3; i++) drawSprite(SP.tree, 50 + i * 350, H - 350, 5);
-      fillRect(mx + mw/2 - 40, my + mh, 80, 50, C.q);
-      fillRect(0, H - 100, W, 100, C.v);
+      const cw = 130, cxs = Math.round(W / 2 - cw / 2);
+      fillRect(cxs, my - 6, cw, mh + 6, C.c);                // projecting centre bay
+      for (let s = 0; s < 24; s++) fillRect(cxs + s, my - 6 - s, cw - s * 2, 2, C.K); // pediment
+      fillRect(cxs, my - 6, cw, 4, C.w);
+      for (let c = 0; c < 4; c++) {                          // four giant pilasters
+        const px = cxs + 16 + c * 33;
+        fillRect(px, my + 38, 10, mh - 66, C.w);             // shaft
+        fillRect(px - 2, my + 34, 14, 5, C.c);               // capital
+        fillRect(px - 2, my + mh - 30, 14, 5, C.c);          // base
+      }
+      for (const wx of [mx + 28, mx + 88, mx + mw - 98, mx + mw - 38]) { // wing sash windows
+        drawSashWindow(wx, my + 30, 40, 52);
+        drawSashWindow(wx, my + 110, 40, 52);
+      }
+      const dx = Math.round(W / 2 - 22);                     // pedimented central doorway
+      for (let s = 0; s < 12; s++) fillRect(dx - 8 + s, my + mh - 74 - s, 60 - s * 2, 2, C.K);
+      fillRect(dx, my + mh - 74, 44, 74, C.t);               // door
+      fillRect(dx + 4, my + mh - 68, 36, 64, C.a);
+      fillRect(dx + 38, my + mh - 40, 4, 5, C.g);            // brass knob
+      fillRect(mx + 44, my - 40, 18, 20, C.j);               // chimneys
+      fillRect(mx + mw - 62, my - 40, 18, 20, C.j);
+      fillRect(0, H - 100, W, 100, C.v);                     // lawn
       fillRect(0, H - 100, W, 15, C.d);
       break;
     }
@@ -1355,23 +1382,40 @@ function drawBackground(type) {
       break;
     }
     case 'ballroom': {
-      fillRect(0, 0, W, H - 150, C.c);
-      for (let y = 0; y < H - 150; y += 20) {
-        for (let x = 0; x < W; x += 20) fillRect(x, y, 10, 10, C.g);
-      }
-      for (let y = H - 150; y < H; y += 30) {
-        for (let x = 0; x < W; x += 30) {
-          fillRect(x, y, 15, 15, ((x + y) / 30) % 2 === 0 ? C.t : C.a);
+      // A Georgian saloon (18th-c.): plaster walls divided by gilt-capitalled
+      // pilasters into bays, each holding a tall arched mirror, above a parquet
+      // floor; a gilt chandelier overhead.
+      fillRect(0, 0, W, H - 150, C.c);                      // plaster wall
+      const bay = 150;
+      for (let x = 0; x < W; x += bay) {                    // pilasters + arched mirrors
+        const mx = x + 38, mwd = bay - 64;
+        if (mx + mwd < W) {
+          fillRect(mx, 56, mwd, H - 236, C.l);              // mirror glass
+          fillRect(mx, 50, mwd, 8, C.K);                    // arched head
+          fillRect(mx + Math.round(mwd / 2) - 1, 58, 2, H - 240, C.w); // glazing bar
+          fillRect(mx, 52, mwd, 2, C.w);
         }
+        fillRect(x + 12, 22, 16, H - 184, C.K);             // pilaster shaft
+        fillRect(x + 14, 24, 4, H - 188, C.w);              // shaft highlight
+        fillRect(x + 8, 16, 24, 7, C.g);                    // gilt capital
+        fillRect(x + 8, H - 168, 24, 7, C.g);               // base
       }
-      // Chandelier
-      fillRect(W/2 - 30, 30, 60, 5, C.g);
-      for (let i = 0; i < 6; i++) {
-        const lx = W/2 - 25 + i * 10;
-        fillRect(lx, 35, 4, 25, C.g);
-        if ((frame + i * 8) % 30 < 20) fillRect(lx, 60, 4, 4, C.y);
+      fillRect(0, H - 158, W, 6, C.g);                      // gilt cornice
+      fillRect(0, H - 150, W, 4, C.t);                      // dado rail
+      for (let y = H - 146; y < H; y += 24) {               // parquet floor
+        for (let x = 0; x < W; x += 24)
+          fillRect(x, y, 22, 22, (Math.floor(x / 24) + Math.floor(y / 24)) % 2 === 0 ? C.t : C.j);
       }
-      fillRect(W/2 - 2, 0, 4, 30, C.g);
+      // gilt chandelier with candle flames — hung below the HUD bar so it shows
+      fillRect(W / 2 - 2, 56, 4, 34, C.g);                  // chain
+      fillRect(W / 2 - 24, 88, 48, 6, C.g);                 // upper tier
+      fillRect(W / 2 - 38, 104, 76, 6, C.g);                // lower tier ring
+      for (let i = 0; i < 9; i++) {
+        const lx = W / 2 - 36 + i * 9;
+        fillRect(lx, 94, 4, 18, C.g);                       // candle
+        if ((frame + i * 7) % 30 < 22) fillRect(lx, 110, 4, 6, C.y); // flame
+      }
+      fillRect(W / 2 - 4, 116, 8, 6, C.g);                  // central drop
       break;
     }
     case 'garden': {
@@ -1410,33 +1454,72 @@ function drawBackground(type) {
         const ry = (i * 71 + frame * 15) % H;
         fillRect(rx, ry, 2, 8, C.l);
       }
-      fillRect(250, 250, 300, 250, C.u);
-      fillRect(230, 230, 340, 20, C.k);
+      // A looming 18th-c. Palladian building in silhouette (a Bedlam-like madhouse):
+      // symmetrical range, projecting centre with pediment and a cupola, dim windows.
+      const bw = 460, bx = Math.round(W / 2 - bw / 2), by = 250, bh = 250;
+      fillRect(bx, by, bw, bh, C.u);                        // main range
+      fillRect(bx - 4, by - 6, bw + 8, 8, C.k);             // cornice
+      const cw = 150, cxs = Math.round(W / 2 - cw / 2);
+      fillRect(cxs, by - 18, cw, bh + 18, C.u);             // projecting centre
+      fillRect(cxs - 6, by - 18, cw + 12, 6, C.k);
+      for (let s = 0; s < 26; s++) fillRect(cxs - 6 + s, by - 18 - s, cw + 12 - s * 2, 2, C.u); // pediment
+      fillRect(W / 2 - 18, by - 70, 36, 30, C.u);           // cupola drum
+      for (let s = 0; s < 16; s++) fillRect(Math.round(W / 2 - 18 + s * 0.6), by - 70 - s, 36 - Math.round(s * 1.2), 2, C.u); // dome
+      fillRect(W / 2 - 1, by - 94, 2, 8, C.o);              // finial
+      for (let r = 0; r < 2; r++) for (let c = 0; c < 12; c++) { // dim, uneasy windows
+        const wx = bx + 16 + c * 37, wy = by + 30 + r * 96;
+        const lit = ((r * 12 + c + Math.floor(frame / 20)) % 7 === 0);
+        fillRect(wx, wy, 16, 28, lit ? C.e : C.k);
+      }
       fillRect(0, H - 50, W, 50, C.k);
       break;
     }
     case 'wedding': {
-      fillRect(0, 0, W, H - 100, C.z);
-      fillRect(0, 0, W, H/2, C.l);
-      fillRect(W/2 - 60, 80, 120, 120, C.g);
-      fillRect(W/2 - 200, 200, 400, 250, C.c);
-      fillRect(W/2 - 30, 100, 60, 100, C.c);
-      fillRect(W/2 - 40, 90, 80, 20, C.a);
-      fillRect(W/2 - 50, 350, 100, 100, C.t);
-      fillRect(W/2 - 30, 220, 60, 60, C.m);
-      fillRect(W/2 - 20, 230, 40, 40, C.p);
-      for (let i = 0; i < 4; i++) {
-        const angle = (i / 4) * Math.PI * 2;
-        const cx = W/2 + Math.cos(angle) * 12;
-        const cy = 250 + Math.sin(angle) * 12;
-        fillRect(Math.floor(cx), Math.floor(cy), 6, 6, C.y);
+      // A Georgian church (St-Martin-in-the-Fields style, 18th-c.): a classical
+      // temple front — six columns under a triangular pediment — with a tall
+      // steeple rising behind, beneath a bright sky strewn with petals.
+      fillRect(0, 0, W, H, C.z);
+      fillRect(0, 0, W, H / 2, C.l);
+      const cx = Math.round(W / 2);
+      // --- steeple behind the portico ---
+      fillRect(cx - 28, 70, 56, 240, C.K);                  // square tower
+      fillRect(cx - 32, 66, 64, 7, C['+']);                 // tower cornice
+      fillRect(cx - 26, 73, 52, 3, C.w);
+      fillRect(cx - 10, 92, 20, 30, C.k);                   // belfry louvre
+      fillRect(cx - 16, 134, 32, 12, C.c);                  // clock stage
+      fillRect(cx - 6, 137, 12, 6, C.k);                    // clock face
+      fillRect(cx - 6, 137, 6, 3, C.g);
+      for (let s = 0; s <= 28; s++)                         // tapering spire
+        fillRect(cx - 14 + Math.round(s * 0.4), 66 - s * 2, 28 - Math.round(s * 0.8), 2, C.K);
+      fillRect(cx - 1, 6, 2, 8, C.g);                       // gilt finial
+      // --- temple-front portico ---
+      const pw = 260, px = cx - pw / 2, py = 222, ph = 228;
+      fillRect(px - 8, py, pw + 16, ph, C.c);               // body
+      fillRect(px - 16, py - 6, pw + 32, 10, C.K);          // entablature
+      for (let s = 0; s < 28; s++)                          // pediment
+        fillRect(px - 16 + s, py - 6 - s, pw + 32 - s * 2, 2, C.K);
+      fillRect(px - 16, py - 6, pw + 32, 3, C.w);
+      for (let c = 0; c < 6; c++) {                         // six columns
+        const colx = Math.round(px + 12 + c * ((pw - 24) / 5));
+        fillRect(colx, py + 14, 14, ph - 50, C.K);          // shaft
+        fillRect(colx + 2, py + 16, 4, ph - 54, C.w);       // flute highlight
+        fillRect(colx - 3, py + 8, 20, 6, C.c);             // capital
+        fillRect(colx - 3, py + ph - 36, 20, 6, C.c);       // base
       }
+      fillRect(cx - 30, py + ph - 112, 60, 112, C.a);       // arched doorway
+      fillRect(cx - 24, py + ph - 102, 48, 98, C.t);
+      fillRect(cx - 2, py + ph - 58, 4, 6, C.g);            // handle
+      // ground, flowers, drifting petals
       fillRect(0, H - 100, W, 100, C.v);
       for (let i = 0; i < 30; i++) {
-        const fx = (i * 47) % W;
-        const fy = H - 90 + (i * 17) % 20;
+        const fx = (i * 47) % W, fy = H - 90 + (i * 17) % 20;
         const colors = [C.F, C.p, C.m, C.y];
         fillRect(fx, fy, 6, 6, colors[i % 4]);
+      }
+      for (let i = 0; i < 16; i++) {
+        const ax = (i * 53 + frame) % W;
+        const ay = (i * 31 + frame * 2) % (H - 130);
+        fillRect(ax, ay, 4, 4, [C.p, C.w, C.y][i % 3]);
       }
       break;
     }
