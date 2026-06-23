@@ -1054,29 +1054,33 @@ function playSound(type) {
   }
 }
 
-// === BAROQUE BACKGROUND MUSIC (original, in the style of Handel's Giulio Cesare) ===
+// === BACKGROUND MUSIC — Handel, "Empio, dirò, tu sei" (Giulio Cesare, HWV 17) ===
+// Simplified, loopable F-major arrangement of Caesar's defiant Act I aria: furious
+// repeated-note declamation ("Empio, dirò, tu sei") answered by a downward sweep
+// ("togliti agli occhi miei"), over a striding continuo. Allegro. Synth-only (no
+// audio files); M still mutes. Faithful to the aria's key/character/contour.
 let musicOn = true;
 const NF = { // note frequencies (Hz)
-  D3:146.83, E3:164.81, Fs3:185.00, G3:196.00, A3:220.00, B3:246.94,
-  D4:293.66, E4:329.63, Fs4:369.99, G4:392.00, A4:440.00, B4:493.88, Cs5:554.37,
-  D5:587.33, E5:659.25
+  F2:87.31, G2:98.00, A2:110.00, Bb2:116.54, C3:130.81, D3:146.83, E3:164.81, F3:174.61,
+  E4:329.63, F4:349.23, G4:392.00, A4:440.00, Bb4:466.16, C5:523.25, D5:587.33, E5:659.25
 };
-const MSPB = 60 / 100; // 100 BPM, stately
-// Melody: a D-major aria with Baroque dotted figures and a cadential turn.
+const MSPB = 60 / 126; // 126 BPM, Allegro
+// Melody: the aria's defiant theme — assertive repeated notes, a leap, a scalar
+// descent, closing on a long tonic before the loop.
 const MELODY = [
-  ['D4',1],['E4',1],['Fs4',1],['G4',1],
-  ['A4',1.5],['G4',0.5],['Fs4',1],['E4',1],
-  ['Fs4',1],['A4',1],['D5',1],['Cs5',1],
-  ['B4',2],['A4',2],
-  ['B4',1],['A4',1],['G4',1],['Fs4',1],
-  ['A4',1],['G4',1],['Fs4',1],['E4',1],
-  ['G4',1],['Fs4',1],['E4',1],['A4',1],
-  ['Fs4',1],['E4',1],['D4',2]
+  ['A4',0.5],['A4',0.5],['A4',1],['C5',1],['A4',1],          // "Em-pio, di-rò" — repeated-note defiance
+  ['G4',1],['Bb4',1],['A4',1],['G4',1],                      // "tu sei" — dominant colour
+  ['F4',0.5],['G4',0.5],['A4',1],['D5',1],['A4',1],          // "to-glia-ti" — leap up
+  ['Bb4',1],['A4',1],['G4',1],['F4',1],                      // "agli occhi" — sweeping descent
+  ['A4',0.5],['A4',0.5],['C5',1],['A4',1],['F4',1],          // restate, more compact
+  ['G4',1],['E4',1],['G4',1],['Bb4',1],                      // dominant prolongation
+  ['C5',1],['A4',1],['G4',1],['E4',1],                       // cadential approach
+  ['F4',4]                                                    // long tonic — breathes before the loop
 ];
-// Basso continuo: half-note roots/fifths supporting the harmony.
+// Basso continuo: striding roots and fifths, one harmony per bar (I V vi IV I V V I).
 const BASS = [
-  ['D3',2],['A3',2], ['A3',2],['E3',2], ['B3',2],['Fs3',2], ['A3',2],['E3',2],
-  ['G3',2],['D3',2], ['Fs3',2],['D3',2], ['G3',2],['A3',2], ['A3',2],['D3',2]
+  ['F2',2],['C3',2],  ['C3',2],['G2',2],  ['D3',2],['A2',2],  ['Bb2',2],['F3',2],
+  ['F2',2],['C3',2],  ['C3',2],['G2',2],  ['C3',2],['E3',2],  ['F2',2],['F3',2]
 ];
 function buildTrack(seq){ let t=0; const ev=[]; for(const [n,d] of seq){ ev.push({f:NF[n], t, d:d*MSPB}); t+=d*MSPB; } return {ev, len:t}; }
 const M_TRACK = buildTrack(MELODY), B_TRACK = buildTrack(BASS);
