@@ -1721,7 +1721,7 @@ function drawHorse(x, y, t, s) {
   fillRect(x + 14*s, y + 8*s, 3*s, 8*s - step*2*s, C.L);  // hindleg
 }
 function drawCarriageRig(x, cabY, t, who, facing) {
-  const s = Math.max(2, Math.round(H / 120));
+  const s = Math.max(2, Math.round(H / 170));   // smaller rig: cab ~matches the dodge window, less clutter
   drawHorse(x + facing*30*s, cabY + 10*s, t, s);                    // team out front (in travel direction)
   fillRect(x + (facing > 0 ? 26*s : -2*s), cabY + 12*s, 2*s, 26*s, C.k); // pole
   fillRect(x, cabY, 30*s, 20*s, who === 'cecilia' ? C.P : C.L);     // cab body
