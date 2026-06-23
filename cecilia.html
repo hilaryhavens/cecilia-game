@@ -1055,32 +1055,42 @@ function playSound(type) {
 }
 
 // === BACKGROUND MUSIC — Handel, "Empio, dirò, tu sei" (Giulio Cesare, HWV 17) ===
-// Loopable C-MINOR arrangement of Caesar's rage aria, transcribed from the score
-// (Allegro, 3 flats). Cesare's vocal entrance is an opening turn (C5-Bb4-C5) that
-// tumbles down a C-minor scale ("Empio, dirò, tu sei"), answered by a rising line
-// to the leading tone and a cadence ("togliti agli occhi miei... sei tutto
-// crudeltà"). Over a striding i-iv-V continuo. Synth-only; M still mutes.
+// Loopable C-MINOR arrangement transcribed from the score (Allegro, 3 flats), in two
+// sections for a longer loop:
+//  A) the OPENING RITORNELLO — the brilliant descending C-minor sixteenth-note
+//     cascade from the top of the staff (m.1), rebounding and turning (m.2);
+//  B) Cesare's VOCAL THEME — the opening turn (C5-Bb4-C5) tumbling down a C-minor
+//     scale ("Empio, dirò, tu sei"), a low line rising to the leading tone Bn4
+//     ("togliti agli occhi miei"), and a cadence ("sei tutto crudeltà").
+// Over a striding i-V / iv-V continuo. Synth-only; M still mutes.
 let musicOn = true;
 const NF = { // note frequencies (Hz)
   G2:98.00, C3:130.81, Eb3:155.56, F3:174.61, G3:196.00,
-  C4:261.63, D4:293.66, Eb4:311.13, F4:349.23, G4:392.00,
-  Ab4:415.30, Bb4:466.16, Bn4:493.88, C5:523.25, D5:587.33, Eb5:622.25
+  C4:261.63, D4:293.66, Eb4:311.13, F4:349.23, G4:392.00, Ab4:415.30, Bb4:466.16, Bn4:493.88,
+  C5:523.25, D5:587.33, Eb5:622.25, F5:698.46, G5:783.99, Ab5:830.61, Bb5:932.33, C6:1046.50
 };
 const MSPB = 60 / 132; // 132 BPM, Allegro (rage aria)
-// Melody (the aria's theme): the "Empio dirò tu sei" turn + descending C-minor run,
-// a sequenced answer rising to the leading tone (Bn4), and a cadence back to tonic.
 const MELODY = [
+  // --- A) Opening ritornello: descending C-minor cascade from the top, then a turn ---
+  ['C6',0.25],['Bb5',0.25],['Ab5',0.25],['G5',0.25],['F5',0.25],['Eb5',0.25],['D5',0.25],['C5',0.25],
+  ['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],['C4',0.25],['D4',0.25],
+  ['Eb4',0.25],['F4',0.25],['G4',0.25],['Ab4',0.25],['Bb4',0.25],['C5',0.25],['D5',0.25],['Eb5',0.25],
+  ['D5',0.5],['C5',0.5],['G4',1],
+  // --- B) Vocal theme ---
   // "Em-pio, di-rò, tu sei" — opening turn, then the scale tumbles down
   ['C5',0.5],['Bb4',0.5],['C5',0.5],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.5],['D4',1],
-  ['Eb4',0.5],['D4',0.5],['C4',1],['G4',1],['G4',1],
-  // "to-gli-ti a glioc-chi miei" — sequenced answer climbing to the leading tone
-  ['Ab4',0.5],['G4',0.5],['Ab4',0.5],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],['Eb4',0.5],['F4',1],
-  // "sei tut-to cru-del-tà" — dominant, leading-tone (Bn4), tonic; breathe, then loop
+  // "to-gli-ti a glioc-chi miei" — low line rising to the leading tone (Bn4)
+  ['C4',0.5],['D4',0.5],['Eb4',0.5],['F4',0.5],['G4',0.5],['Ab4',0.5],['G4',0.5],['Bn4',0.5],
+  // "sei tut-to cru-del-tà" — upper neighbour, dotted descent
+  ['C5',0.5],['Eb5',0.5],['D5',0.5],['C5',0.5],['Bb4',0.5],['Ab4',0.5],['G4',0.5],['F4',0.5],
+  // cadence to tonic, breathe before the loop
   ['G4',1],['Bn4',1],['C5',2]
 ];
-// Basso continuo: two half notes per bar — i, i, iv->V, V->i in C minor.
+// Basso continuo: two half notes per bar — i / V, then iv-V-i at the cadence (C minor).
 const BASS = [
-  ['C3',2],['G2',2],   ['C3',2],['Eb3',2],   ['F3',2],['G2',2],   ['G2',2],['C3',2]
+  ['C3',2],['G2',2],   ['C3',2],['G2',2],     // ritornello bars
+  ['C3',2],['G2',2],   ['C3',2],['G2',2],     // Empio diro / togliti
+  ['F3',2],['G2',2],   ['G2',2],['C3',2]      // crudelta / cadence
 ];
 function buildTrack(seq){ let t=0; const ev=[]; for(const [n,d] of seq){ ev.push({f:NF[n], t, d:d*MSPB}); t+=d*MSPB; } return {ev, len:t}; }
 const M_TRACK = buildTrack(MELODY), B_TRACK = buildTrack(BASS);
