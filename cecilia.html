@@ -158,6 +158,39 @@ SP.ceciliaRun = [
   "....kkkk........",
 ];
 
+// ceciliaWalk - detailed 24x32 walker for the charity minigame (matches the cast portraits;
+// stepping legs + the running bob read as movement). Replaces the old compact ceciliaRun there.
+SP.ceciliaWalk = [
+  ".........GWWG...........",
+  "........GWWWWG..........",
+  ".......GWWWWWWG.........",
+  "......GWWWWWWWWG........",
+  "......WWWsssssWWW.......",
+  ".....WWWsssssssWWW......",
+  ".....GWWsksssksWWG......",
+  "......WWMssSssMWW.......",
+  ".......WsssrrsssW.......",
+  "........WsssssW.........",
+  "..........ssss.........",
+  "........wwssssww........",
+  "......wwwppppppwww......",
+  ".......MppppppppM.......",
+  ".......iiiiggiiii.......",
+  "......pppppppppppp......",
+  "......pppppppppppp......",
+  ".....pppppppppppppp.....",
+  ".....ppppppMMpppppp.....",
+  ".....pppppppppppppp.....",
+  "....pppppppppppppppp....",
+  "....pppppppppppppppp....",
+  "....pppppppppppppppp....",
+  "...pppppppppppppppppp...",
+  "...wwwwwwwwwwwwwwwwww...",
+  ".....ssss....ssss......",
+  ".....ssss....ssss......",
+  "....kkkkk....kkkkk.....",
+];
+
 // === 24x32 PORTRAIT SPRITES (distinct cast, drawn with Mario-style outline) ===
 // Cecilia - heroine, white powdered coiffure, rose gown
 SP.cecilia = [
@@ -1979,7 +2012,7 @@ function drawMinigame() {
   // Player
   const px = Math.floor(mg.player.x);
   const py = Math.floor(mg.player.y);
-  drawSprite(SP.ceciliaRun, px, py + (mg.player.onGround && Math.abs(mg.player.vx) > 0.5 ? Math.sin(mg.levelTime * 0.3) : 0), 3);
+  drawSprite(SP.ceciliaWalk, px, py + 4 + (mg.player.onGround && Math.abs(mg.player.vx) > 0.5 ? Math.sin(mg.levelTime * 0.3) : 0), 2, C, true);
   // End marker
   fillRect(mg.endX, 200, 6, 210, C.L);
   fillRect(mg.endX + 6, 210, 60, 40, C.v);
@@ -2010,7 +2043,7 @@ function initChase() {
     t: 0,
     laneY: 300,               // Cecilia's carriage vertical position
     vy: 0,                    // vertical velocity (momentum steering)
-    gap: 320,                 // distance to Delvile's carriage; smaller = closer
+    gap: 520,                 // distance to Delvile's carriage; smaller = closer (longer chase)
     obstacles: [],
     nextObs: 60,
     reach: 0,                 // phase 2: progress toward Delvile (0..100)
@@ -2028,7 +2061,7 @@ function updateChase() {
   if (chase.phase === 1) {
     // Steer up/down to dodge. Momentum model: the carriage has weight — it accelerates
     // into a turn and coasts to a stop, so steering feels responsive but not twitchy.
-    const ACCEL = 2.4, MAXV = 8, FRICTION = 0.72;
+    const ACCEL = 8, MAXV = 10, FRICTION = 0.55;
     let dir = 0;
     if (keys['ArrowUp'] || keys['KeyW']) dir -= 1;
     if (keys['ArrowDown'] || keys['KeyS']) dir += 1;
@@ -2053,7 +2086,7 @@ function updateChase() {
     // Clean driving slowly closes the gap; lingering scales with diff.
     chase.gap -= 0.5 * chase.diff;
     if (chase.gap <= 0) { chase.phase = 2; playSound('select'); }     // caught up -> foot chase
-    if (chase.t > 60 * 30) { chase.phase = 2; }                       // safety: cap phase 1 at ~30s
+    if (chase.t > 60 * 45) { chase.phase = 2; }                       // safety: cap phase 1 at ~45s
   } else {
     // Phase 2: mash Right/Space to reach him before the crowd overtakes her.
     if (keyPressed('ArrowRight') || keyPressed('Space') || keyPressed('KeyD')) chase.reach += 2.2;
