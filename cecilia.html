@@ -1559,7 +1559,7 @@ function initRoom() {
 function updateRoom() {
   if (room.intro) {
     for (const k in keys) {
-      if (keys[k] === true && !k.endsWith('_p')) { room.intro = false; break; }
+      if (k.endsWith('_p') && keys[k]) { room.intro = false; break; }
     }
   }
   if (room.leaving) {
@@ -1759,8 +1759,8 @@ function drawBackground(type) {
       fillRect(W - 194, 96, 38, 118, C.t);                   // left shutter
       fillRect(W - 154, 96, 38, 118, C.t);                   // right shutter
       for (let s = 0; s < 5; s++) { fillRect(W - 194, 96 + s * 24, 38, 3, C.a); fillRect(W - 154, 96 + s * 24, 38, 3, C.a); }
-      // Cobwebs in the top corners (kept below the HUD bar, which covers y < 54)
-      const cwY = 58;
+      // Cobwebs in the top corners (kept below the HUD bar, which covers y 0-64)
+      const cwY = 66;
       for (let i = 0; i < 5; i++) {
         fillRect(0, cwY + i * 12, 60 - i * 12, 2, C.G);
         fillRect(60 - i * 12, cwY + i * 12, 2, 12, C.G);
@@ -2615,8 +2615,8 @@ function draw() {
     drawHUD();
     // Title of ending
     if (currentScene.title) {
-      fillRect(0, 60, W, 60, C.k);
-      drawText(currentScene.title, W/2, 75, C.g, 3, 'center');
+      fillRect(0, 64, W, 60, C.k);
+      drawText(currentScene.title, W/2, 79, C.g, 3, 'center');
     }
     // Dialogue box for ending text
     const boxH = 280;
