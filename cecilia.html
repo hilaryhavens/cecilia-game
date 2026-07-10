@@ -1537,7 +1537,8 @@ function nearNpc() {
 }
 // Scenes 4-11 end here instead of advancing the linear story.
 function returnFromRoomDetour() {
-  if (room && room.pendingMeet) { room.met[room.pendingMeet] = true; room.pendingMeet = null; }
+  if (!room) { currentSceneIdx++; setupScene(); return; }
+  if (room.pendingMeet) { room.met[room.pendingMeet] = true; room.pendingMeet = null; }
   state = 'room';
   if (!room.doorOpen && ROOM_NPCS.every(n => room.met[n.key])) {
     room.doorOpen = true;
@@ -1547,7 +1548,7 @@ function returnFromRoomDetour() {
 }
 function initRoom() {
   room = {
-    px: W / 2, py: 560, facing: 1,   // Cecilia's feet
+    px: W / 2, py: 560,               // Cecilia's feet
     met: {},                          // npc key -> true once their intro scene played
     pendingMeet: null,                // npc key whose scene is currently detoured into
     doorOpen: false, doorFlash: 0,
@@ -1561,6 +1562,8 @@ function updateRoom() {
     if (room.fade >= 45) {                // ~0.75s fade, then the story resumes
       state = 'scene';
       currentSceneIdx = 12;               // Harrel's storm plea - linear flow from here
+      keys['ArrowUp_p'] = keys['ArrowDown_p'] = keys['KeyW_p'] = keys['KeyS_p'] = false;
+      keys['Space_p'] = keys['Enter_p'] = false;
       setupScene();
     }
     return;
@@ -1582,7 +1585,6 @@ function updateRoom() {
   else if (keys['ArrowLeft'] || keys['KeyA']) dx = -SPD;
   if (keys['ArrowDown'] || keys['KeyS']) dy = SPD;
   else if (keys['ArrowUp'] || keys['KeyW']) dy = -SPD;
-  if (dx) room.facing = dx > 0 ? 1 : -1;
   room.px = Math.max(30, Math.min(W - 30, room.px + dx));
   room.py = Math.max(310, Math.min(585, room.py + dy));
   room.moving = !!(dx || dy);
@@ -1604,6 +1606,7 @@ function updateRoom() {
       room.pendingMeet = n.key;
       state = 'scene';
       currentSceneIdx = n.sceneIdx;
+      keys['ArrowUp_p'] = keys['ArrowDown_p'] = keys['KeyW_p'] = keys['KeyS_p'] = false;
       setupScene();
     } else if (n) {                        // met already: one line of character, no effects
       playSound('select');
