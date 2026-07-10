@@ -1274,6 +1274,9 @@ function playSound(type) {
     case 'victory':
       [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.2, 'square', 0.08), i * 100));
       break;
+    case 'chime': // the great door unbars: three rising bell tones
+      [784, 988, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.35, 'triangle', 0.09), i * 160));
+      break;
     case 'type':
       tone(800 + Math.random() * 200, 0.02, 'square', 0.025);
       break;
@@ -1494,6 +1497,8 @@ function drawCoinSpill(cx, gy) {
     fillRect(x + 3, y + 2, 4, 2, C.e);  // highlight
   }
 }
+// === GEORGIAN ROOM (hub) — state lives here; initialised by initRoom() ===
+let room = null;
 function drawBackground(type) {
   switch (type) {
     case 'title': {
@@ -1642,6 +1647,84 @@ function drawBackground(type) {
         if ((frame + i * 7) % 30 < 22) fillRect(lx, 110, 4, 6, C.y); // flame
       }
       fillRect(W / 2 - 4, 116, 8, 6, C.g);                  // central drop
+      break;
+    }
+    case 'room': {
+      // A Georgian drawing room (18th-c.): panelled plaster wall in bays with
+      // rectangular fielded panels, dado rail, two curtained sash windows, a
+      // pedimented grand double door in the centre, a stone chimneypiece with
+      // lit fire, parquet floor as the walkable plane, gilt chandelier above.
+      const WALL_B = 300;                                   // bottom of the back wall
+      fillRect(0, 0, W, WALL_B, C.c);                       // plaster wall
+      // panelled bays (ballroom pilaster rhythm, panels instead of mirrors)
+      const bay = 160;
+      for (let x = 0; x < W; x += bay) {
+        fillRect(x + 12, 60, 14, WALL_B - 90, C.K);         // pilaster shaft
+        fillRect(x + 14, 62, 4, WALL_B - 94, C.w);          // highlight
+        fillRect(x + 8, 54, 22, 6, C.g);                    // gilt capital
+        fillRect(x + 8, WALL_B - 34, 22, 6, C.g);           // base
+        const px2 = x + 40, pw = bay - 56;                  // fielded panel in each bay
+        if (px2 + pw < W) {
+          fillRect(px2, 74, pw, 130, C.K);                  // panel moulding
+          fillRect(px2 + 5, 79, pw - 10, 120, C.l);         // field
+        }
+      }
+      fillRect(0, WALL_B - 28, W, 5, C.t);                  // dado rail
+      fillRect(0, WALL_B - 4, W, 4, C.a);                   // skirting shadow
+      // two curtained sash windows flanking the door (over the nearest panels)
+      for (const wx of [150, 610]) {
+        fillRect(wx - 14, 66, 12, 150, C.n);                // curtains
+        fillRect(wx + 42, 66, 12, 150, C.n);
+        fillRect(wx - 16, 62, 72, 8, C.g);                  // gilt pelmet
+        drawSashWindow(wx, 74, 40, 118);
+      }
+      // grand double door, centred: pedimented surround, two six-panel leaves
+      const DL = 345, DR = 455, DT = 140;                   // door left/right/top
+      for (let s = 0; s < 16; s++) fillRect(DL - 14 + s, DT - 18 - s, (DR - DL) + 28 - s * 2, 2, C.K); // pediment
+      fillRect(DL - 10, DT - 4, (DR - DL) + 20, 6, C.K);    // entablature
+      fillRect(DL - 8, DT, 4, WALL_B - DT, C.K);            // jambs
+      fillRect(DR + 4, DT, 4, WALL_B - DT, C.K);
+      if (room && room.doorOpen) {
+        fillRect(DL, DT, DR - DL, WALL_B - DT, C.k);        // dark hall beyond
+        fillRect(DL, DT, 10, WALL_B - DT, C.t);             // leaves swung edge-on
+        fillRect(DR - 10, DT, 10, WALL_B - DT, C.t);
+      } else {
+        for (const lx of [DL, DL + (DR - DL) / 2]) {        // two shut leaves
+          const lw = (DR - DL) / 2;
+          fillRect(lx, DT, lw, WALL_B - DT, C.t);
+          fillRect(lx + 6, DT + 10, lw - 12, 40, C.a);      // three fielded panels each
+          fillRect(lx + 6, DT + 58, lw - 12, 44, C.a);
+          fillRect(lx + 6, DT + 110, lw - 12, 40, C.a);
+        }
+        fillRect(DL + (DR - DL) / 2 - 6, DT + 78, 4, 6, C.g); // brass knobs at the meeting stile
+        fillRect(DL + (DR - DL) / 2 + 2, DT + 78, 4, 6, C.g);
+      }
+      // chimneypiece, left of the door: stone surround, mantel, flickering fire
+      const fx = 40, fy = WALL_B - 118;
+      fillRect(fx - 8, fy - 12, 96, 8, C.K);                // mantel shelf
+      fillRect(fx - 4, fy, 8, 118 - 28, C.K);               // jambs
+      fillRect(fx + 76, fy, 8, 118 - 28, C.K);
+      fillRect(fx + 4, fy, 72, 118 - 28, C.k);              // firebox
+      if ((frame % 24) < 16) fillRect(fx + 22, fy + 48, 36, 22, C.x); // embers
+      fillRect(fx + 26, fy + 34 + ((frame % 14) < 7 ? 2 : 0), 28, 22, C.y); // flame flicker
+      fillRect(fx + 34, fy + 24 + ((frame % 10) < 5 ? 3 : 0), 12, 14, C.w); // flame tip
+      for (const cx of [fx + 2, fx + 66]) {                 // candlesticks on the mantel
+        fillRect(cx, fy - 28, 4, 16, C.g);
+        if ((frame + cx) % 30 < 22) fillRect(cx, fy - 34, 4, 6, C.y);
+      }
+      // parquet floor — the walkable plane (ballroom pattern, lower 1/2)
+      for (let y = WALL_B; y < H; y += 24)
+        for (let x = 0; x < W; x += 24)
+          fillRect(x, y, 22, 22, (Math.floor(x / 24) + Math.floor(y / 24)) % 2 === 0 ? C.t : C.j);
+      // gilt chandelier (ballroom's, hung below the HUD bar)
+      fillRect(W / 2 - 2, 56, 4, 24, C.g);
+      fillRect(W / 2 - 24, 78, 48, 6, C.g);
+      fillRect(W / 2 - 38, 94, 76, 6, C.g);
+      for (let i = 0; i < 9; i++) {
+        const lx = W / 2 - 36 + i * 9;
+        fillRect(lx, 84, 4, 18, C.g);
+        if ((frame + i * 7) % 30 < 22) fillRect(lx, 100, 4, 6, C.y);
+      }
       break;
     }
     case 'garden': {
