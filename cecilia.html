@@ -1556,6 +1556,16 @@ function initRoom() {
   };
 }
 function updateRoom() {
+  if (room.talk) {
+    if (room.talk.idx < room.talk.line.length) {
+      room.talk.idx++;
+      if (room.talk.idx % 3 === 0) playSound('type');
+      if (keyPressed('Space') || keyPressed('Enter')) room.talk.idx = room.talk.line.length; // skip to full line
+    } else if (keyPressed('Space') || keyPressed('Enter')) {
+      room.talk = null;
+    }
+    return;
+  }
   const SPD = 2.5;
   let dx = 0, dy = 0;
   if (keys['ArrowRight'] || keys['KeyD']) dx = SPD;
@@ -1579,6 +1589,9 @@ function updateRoom() {
       state = 'scene';
       currentSceneIdx = n.sceneIdx;
       setupScene();
+    } else if (n) {                        // met already: one line of character, no effects
+      playSound('select');
+      room.talk = { name: n.name, line: n.line, idx: 0 };
     }
   }
 }
@@ -1599,8 +1612,22 @@ function drawRoom() {
       }
     }
   }
+  if (room.talk) {
+    // compact speech box, styled after drawDialogue but only ~1/4 screen tall
+    const bT = 468;
+    fillRect(0, bT, W, H - bT, C.k);
+    fillRect(0, bT, W, 4, C.w); fillRect(0, H - 4, W, 4, C.w);
+    fillRect(0, bT, 4, H - bT, C.w); fillRect(W - 4, bT, 4, H - bT, C.w);
+    fillRect(20, bT - 34, 360, 40, C.w);
+    fillRect(25, bT - 29, 350, 30, C.k);
+    drawText(room.talk.name, 34, bT - 22, C.g, 1.5, 'left', false);
+    const lines = wrapText(room.talk.line.substring(0, room.talk.idx), 44);
+    for (let i = 0; i < lines.length; i++) drawText(lines[i], 30, bT + 20 + i * 30, C.w, 2, 'left', false);
+    if (room.talk.idx >= room.talk.line.length && Math.floor(frame / 30) % 2 === 0)
+      drawText('PRESS SPACE', W - 230, H - 32, C.g, 1.5, 'left', false);
+  }
   const near = nearNpc();
-  if (near && Math.floor(frame / 30) % 2 === 0) {
+  if (near && !room.talk && Math.floor(frame / 30) % 2 === 0) {
     drawText('PRESS SPACE TO SPEAK', W / 2, H - 24, C.g, 1.5, 'center', false);
   }
   drawHUD();
