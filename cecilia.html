@@ -1049,12 +1049,12 @@ const SCENES = [
     ]
   },
   {
-    bg: 'ballroom', speaker: 'MR. FLOYER',
-    text: "'Miss Beverley - that is - I had meant to say - the weather, and your eyes, are both uncommonly fine today!' He treads upon your hem.",
+    bg: 'ballroom', speaker: 'SIR ROBERT FLOYER',
+    text: "Sir Robert Floyer surveys you at his leisure, as a man appraises a horse at Tattersall's. 'So this is the heiress. You may account yourself fortunate, Miss Beverley - I have determined to have you.'",
     character: 'floyer',
     choices: [
-      { text: "Laugh kindly and encourage him.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
-      { text: "Excuse yourself with civility.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
+      { text: "Cast your eyes downward and blush, but do not leave the room.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "Excuse yourself with barely concealed revulsion.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ]
   },
   {
@@ -1945,7 +1945,8 @@ function drawChoices(choices) {
     fillRect(bx, cy, bw, bh, selected ? C.n : C.k);
     fillRect(bx + 4, cy + 4, bw - 8, bh - 8, selected ? C.B : C.u);
     if (selected) drawText('►', bx + 14, cy + 11, C.y, 1.5, 'left', false);
-    drawText(choices[i].text, bx + 44, cy + 11, selected ? C.w : C.c, 1.5, 'left', false);
+    const csz = choices[i].text.length > 54 ? 1 : 1.5;           // long lines drop to the small font so they never overflow the button
+    drawText(choices[i].text, bx + 44, cy + 11 + (csz === 1 ? 3 : 0), selected ? C.w : C.c, csz, 'left', false);
   }
 }
 
