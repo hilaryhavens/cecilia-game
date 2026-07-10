@@ -2041,18 +2041,35 @@ function drawBackground(type) {
 
 function fmtGold(g) { return '£' + Math.round(g).toLocaleString('en-GB'); }
 function drawHUD() {
-  fillRect(0, 0, W, 50, C.k);
-  fillRect(0, 50, W, 4, C.w);
-  drawText('LOVE', 20, 18, C.w, 1, 'left', false);
+  const S = 1.5, CH = 8 * S;                     // scale + monospace char advance (12px)
+  const BAR = 60;
+  fillRect(0, 0, W, BAR, C.k);
+  fillRect(0, BAR, W, 4, C.w);
+  // Group widths (label + gap + content), then center the whole row.
+  const gap = 12, groupGap = 40;
+  const heartPitch = 38, heartBox = 27;          // 25/18 at 1x, scaled 1.5x
+  const pipPitch = 24, pipW = 18, pipH = 30;     // 16/12/20 at 1x, scaled 1.5x
+  const goldStr = fmtGold(stats.gold);
+  const wLove   = 4 * CH + gap + 4 * heartPitch + heartBox;
+  const wGold   = 4 * CH + gap + goldStr.length * CH;
+  const wVirtue = 6 * CH + gap + 5 * pipPitch + pipW;
+  let x = Math.round((W - (wLove + groupGap + wGold + groupGap + wVirtue)) / 2);
+  const textY = Math.round((BAR - CH) / 2);      // vertically centre 12px glyphs in the bar
+  drawText('LOVE', x, textY, C.w, S, 'left', false);
+  x += 4 * CH + gap;
   for (let i = 0; i < 5; i++) {
-    if (i < stats.hearts) drawSprite(SP.heart, 100 + i * 25, 8, 1);
-    else fillRect(100 + i * 25, 8, 18, 18, C.u);
+    if (i < stats.hearts) drawSprite(SP.heart, x + i * heartPitch, Math.round((BAR - heartBox) / 2), S);
+    else fillRect(x + i * heartPitch, Math.round((BAR - heartBox) / 2), heartBox, heartBox, C.u);
   }
-  drawText('GOLD', 250, 18, C.g, 1, 'left', false);
-  drawText(fmtGold(stats.gold), 320, 18, C.g, 1, 'left', false);
-  drawText('VIRTUE', 470, 18, C.h, 1, 'left', false);
+  x += 4 * heartPitch + heartBox + groupGap;
+  drawText('GOLD', x, textY, C.g, S, 'left', false);
+  x += 4 * CH + gap;
+  drawText(goldStr, x, textY, C.g, S, 'left', false);
+  x += goldStr.length * CH + groupGap;
+  drawText('VIRTUE', x, textY, C.h, S, 'left', false);
+  x += 6 * CH + gap;
   for (let i = 0; i < 6; i++) {
-    fillRect(560 + i * 16, 10, 12, 20, i < stats.virtue ? C.v : C.u);
+    fillRect(x + i * pipPitch, Math.round((BAR - pipH) / 2), pipW, pipH, i < stats.virtue ? C.v : C.u);
   }
 }
 
