@@ -1001,7 +1001,7 @@ const SCENES = [
     onContinue: () => { state = 'room'; initRoom(); }
   },
   {
-    bg: 'manor', speaker: 'MR. BRIGGS',
+    bg: 'miser', speaker: 'MR. BRIGGS',
     text: "What? make it over to a scoundrel? no, no, won't suffer it; sha'n't be, sha'n't be - don't marry proper! I'll have a care whom ye choose!'",
     character: 'briggs',
     choices: [
@@ -1724,6 +1724,50 @@ function drawBackground(type) {
       fillRect(mx + mw - 62, my - 40, 18, 20, C.j);
       fillRect(0, H - 100, W, 100, C.v);                     // lawn
       fillRect(0, H - 100, W, 15, C.d);
+      break;
+    }
+    case 'miser': {
+      // Briggs's miser's mansion, inside: a bare, dingy, penny-pinched parlour.
+      fillRect(0, 0, W, H, '#141018');                       // gloom
+      fillRect(0, 0, W, H - 160, C.u);                       // dim panelled wall
+      for (let p = 0; p < 5; p++) {                          // bare wall panels
+        const px = 30 + p * 155;
+        fillRect(px, 60, 130, 250, C.k);
+        fillRect(px + 6, 66, 118, 238, C.u);
+      }
+      fillRect(0, H - 160, W, 160, C.a);                     // bare floorboards
+      for (let b = 0; b < 8; b++) fillRect(0, H - 160 + b * 20, W, 2, C.k);
+      // Left window: bricked up (the window tax, dodged)
+      fillRect(110, 90, 90, 130, C.L);                       // frame
+      for (let r = 0; r < 6; r++)                            // brick courses
+        for (let c = 0; c < 3; c++)
+          fillRect(116 + c * 26 + (r % 2 ? 13 : 0), 96 + r * 20, 24, 18, r % 2 ? C.j : C.q);
+      // Right window: shuttered tight
+      fillRect(W - 200, 90, 90, 130, C.L);
+      fillRect(W - 194, 96, 38, 118, C.t);                   // left shutter
+      fillRect(W - 154, 96, 38, 118, C.t);                   // right shutter
+      for (let s = 0; s < 5; s++) { fillRect(W - 194, 96 + s * 24, 38, 3, C.a); fillRect(W - 154, 96 + s * 24, 38, 3, C.a); }
+      // Cobwebs in the top corners (kept below the HUD bar, which covers y < 54)
+      const cwY = 58;
+      for (let i = 0; i < 5; i++) {
+        fillRect(0, cwY + i * 12, 60 - i * 12, 2, C.G);
+        fillRect(60 - i * 12, cwY + i * 12, 2, 12, C.G);
+        fillRect(W - 60 + i * 12, cwY + i * 12, 60 - i * 12, 2, C.G);
+        fillRect(W - 62 + i * 12, cwY + i * 12, 2, 12, C.G);
+      }
+      // One guttering candle on a stick, mid-room: halo shrinks/swells
+      // (kept above the dialogue box, which covers y >= 322, so it stays visible during Briggs's scene)
+      const gutter = (frame % 40 < 28) ? 1 : 0;              // guttering: dips low
+      fillRect(W / 2 - 60, 250, 8, 40, C.c);                 // candle
+      fillRect(W / 2 - 66, 288, 20, 6, C.o);                 // holder
+      fillRect(W / 2 - 59, 242 - gutter * 4, 6, 8 + gutter * 4, C.g);   // flame
+      if (gutter) fillRect(W / 2 - 58, 238, 4, 4, C.y);      // bright tip
+      // Padlocked strongbox against the wall (also kept clear of the dialogue box)
+      fillRect(70, 240, 120, 60, C.L);                       // chest
+      fillRect(70, 240, 120, 8, C.t);                        // lid edge
+      for (const bx of [78, 122, 166]) fillRect(bx, 240, 8, 60, C.o);   // iron bands
+      fillRect(118, 264, 22, 20, C.o);                       // hasp
+      fillRect(122, 274, 14, 16, C.g);                       // padlock (gold he'll never spend)
       break;
     }
     case 'london': {
