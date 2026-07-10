@@ -1728,7 +1728,7 @@ function drawBackground(type) {
     }
     case 'miser': {
       // Briggs's miser's mansion, inside: a bare, dingy, penny-pinched parlour.
-      fillRect(0, 0, W, H, '#141018');                       // gloom
+      fillRect(0, 0, W, H, C.k);                       // gloom
       fillRect(0, 0, W, H - 160, C.u);                       // dim panelled wall
       for (let p = 0; p < 5; p++) {                          // bare wall panels
         const px = 30 + p * 155;
