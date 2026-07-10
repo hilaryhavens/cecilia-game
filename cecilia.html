@@ -1008,7 +1008,8 @@ const SCENES = [
       { text: "'Sir, I shall choose with wisdom.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } },
       { text: "'Sir, I shall consult you on all matters.'", effect: (gs) => { gs.stats.gold += 1000; } },
       { text: "'Sir, I am mistress of my own fate!'", effect: (gs) => { gs.stats.hearts += 0; } }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'ballroom', speaker: 'MRS. DELVILE',
@@ -1018,7 +1019,8 @@ const SCENES = [
       { text: "Greet Mortimer Delvile warmly.", effect: (gs) => { gs.suitors.delvile += 1; gs.stats.hearts += 1; clampHearts(gs); } },
       { text: "Engage instead Mr. Monckton in conversation.", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
       { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'garden', speaker: 'MR. MONCKTON',
@@ -1028,7 +1030,8 @@ const SCENES = [
       { text: "'How kind. Tell me more.'", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
       { text: "'Sir, I am not for sale!'", effect: (gs) => { gs.stats.virtue += 1; gs.suitors.monckton -= 1; clampVirtue(gs); } },
       { text: "'Sir, your concern is noted.'", effect: (gs) => {} }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'garden', speaker: 'MORTIMER DELVILE',
@@ -1038,7 +1041,8 @@ const SCENES = [
       { text: "'Mortimer, your honesty moves me deeply.'", effect: (gs) => { gs.suitors.delvile += 2; gs.stats.hearts += 1; clampHearts(gs); } },
       { text: "'I am honored by your regard.'", effect: (gs) => { gs.suitors.delvile += 1; gs.stats.hearts += 1; clampHearts(gs); } },
       { text: "'Then we are at an impasse.'", effect: (gs) => { gs.stats.hearts -= 1; clampHearts(gs); } }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'manor', speaker: 'MR. HARREL',
@@ -1047,7 +1051,8 @@ const SCENES = [
     choices: [
       { text: "'I am sorry to hear of your troubles, sir.'", effect: (gs) => { gs.flags.sympathizedWithHarrel = true; gs.stats.virtue += 0; } },
       { text: "'Perhaps economy would serve the household better.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'ballroom', speaker: 'SIR ROBERT FLOYER',
@@ -1056,7 +1061,8 @@ const SCENES = [
     choices: [
       { text: "Cast your eyes downward and blush, but do not leave the room.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
       { text: "Excuse yourself with barely concealed revulsion.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'garden', speaker: 'MR. ARNOTT',
@@ -1065,7 +1071,8 @@ const SCENES = [
     choices: [
       { text: "'You are the truest friend I have, Mr. Arnott.'", effect: (gs) => { gs.suitors.arnott += 1; gs.flags.kindToArnott = true; } },
       { text: "Thank him gently and turn away.", effect: (gs) => {} }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'london', speaker: 'OLD ALBANY',
@@ -1074,7 +1081,8 @@ const SCENES = [
     choices: [
       { text: "'Teach me to do good with what I have.'", effect: (gs) => { gs.stats.virtue += 2; clampVirtue(gs); } },
       { text: "'Charity is a private matter, sir.'", effect: (gs) => { gs.stats.virtue -= 1; clampVirtue(gs); } }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   {
     bg: 'storm', speaker: 'MR. HARREL',
@@ -1501,6 +1509,42 @@ function drawCoinSpill(cx, gy) {
 }
 // === GEORGIAN ROOM (hub) — state lives here; initialised by initRoom() ===
 let room = null;
+// The eight acquaintances, waiting about the room. x,y = feet position;
+// sceneIdx = their existing intro scene (played once, as a detour);
+// line = the one repeat-conversation flavor line (approved copy — verbatim).
+const ROOM_NPCS = [
+  { key: 'briggs',     name: 'MR. BRIGGS',        sceneIdx: 4,  x:  90, y: 350,
+    line: "If you don't know the value of sixpence, you'll never be worth fivepence three farthings." },
+  { key: 'mrsdelvile', name: 'MRS. DELVILE',      sceneIdx: 5,  x: 215, y: 335,
+    line: "My dear Miss Beverley, a woman's dignity is her whole estate. Guard yours, as I guard the name of Delvile." },
+  { key: 'monckton',   name: 'MR. MONCKTON',      sceneIdx: 6,  x: 710, y: 350,
+    line: "A word, Miss Beverley - trust none of the flatterers in this room. None, that is, save myself." },
+  { key: 'delvile',    name: 'MORTIMER DELVILE',  sceneIdx: 7,  x: 585, y: 335,
+    line: "Forgive me, Miss Beverley - I find I cannot quit the room while you remain in it." },
+  { key: 'harrel',     name: 'MR. HARREL',        sceneIdx: 8,  x: 140, y: 495,
+    line: "Do not look so grave, Miss Beverley! A masquerade, a supper - a few hundred pounds is a trivial matter between friends." },
+  { key: 'floyer',     name: 'SIR ROBERT',        sceneIdx: 9,  x: 660, y: 495,
+    line: "Who the d——l will fatigue himself with dancing attendance upon the women, when keeping them at a distance makes them dance attendance upon us?" },
+  { key: 'arnott',     name: 'MR. ARNOTT',        sceneIdx: 10, x: 520, y: 560,
+    line: "I - forgive me, I had nothing of consequence to say. Only that I am always near, should you ever want a friend." },
+  { key: 'albany',     name: 'OLD ALBANY',        sceneIdx: 11, x: 280, y: 560,
+    line: "Still here, among the gilded and the idle? Go forth! The poor wait upon your bounty, and time waits upon no one." }
+];
+function nearNpc() {
+  for (const n of ROOM_NPCS)
+    if (Math.abs(room.px - n.x) < 48 && Math.abs(room.py - n.y) < 40) return n;
+  return null;
+}
+// Scenes 4-11 end here instead of advancing the linear story.
+function returnFromRoomDetour() {
+  if (room && room.pendingMeet) { room.met[room.pendingMeet] = true; room.pendingMeet = null; }
+  state = 'room';
+  if (!room.doorOpen && ROOM_NPCS.every(n => room.met[n.key])) {
+    room.doorOpen = true;
+    room.doorFlash = 150;
+    playSound('chime');
+  }
+}
 function initRoom() {
   room = {
     px: W / 2, py: 560, facing: 1,   // Cecilia's feet
@@ -1522,12 +1566,43 @@ function updateRoom() {
   room.px = Math.max(30, Math.min(W - 30, room.px + dx));
   room.py = Math.max(310, Math.min(585, room.py + dy));
   room.moving = !!(dx || dy);
+  // block walking through people
+  const bump = nearNpc();
+  if (bump && Math.abs(room.px - bump.x) < 30 && Math.abs(room.py - bump.y) < 24) {
+    room.px = room.px < bump.x ? bump.x - 30 : bump.x + 30;
+  }
+  if (keyPressed('Space') || keyPressed('Enter')) {
+    const n = nearNpc();
+    if (n && !room.met[n.key]) {          // first meeting: detour into their scene
+      playSound('select');
+      room.pendingMeet = n.key;
+      state = 'scene';
+      currentSceneIdx = n.sceneIdx;
+      setupScene();
+    }
+  }
 }
 function drawRoom() {
   drawBackground('room');
-  // Cecilia, feet at (px, py), walker sprite at minigame scale with walk-bob
-  const bob = room.moving ? Math.sin(frame * 0.3) : 0;
-  drawSprite(SP.ceciliaWalk, room.px - 24, room.py - 64 + bob, 2, C, true);
+  const figures = ROOM_NPCS.map(n => ({ n, y: n.y })).concat([{ cecilia: true, y: room.py }]);
+  figures.sort((a, b) => a.y - b.y);
+  for (const f of figures) {
+    if (f.cecilia) {
+      const bob = room.moving ? Math.sin(frame * 0.3) : 0;
+      drawSprite(SP.ceciliaWalk, room.px - 24, room.py - 64 + bob, 2, C, true);
+    } else {
+      const n = f.n, spr = SP[n.key];
+      drawSprite(spr, n.x - 24, n.y - spr.length * 2, 2, C, true);
+      if (!room.met[n.key]) {             // bobbing "!" over the not-yet-met
+        const my = n.y - spr.length * 2 - 20 + Math.sin(frame * 0.1) * 3;
+        drawText('!', n.x - 4, my, C.r, 2, 'left');
+      }
+    }
+  }
+  const near = nearNpc();
+  if (near && Math.floor(frame / 30) % 2 === 0) {
+    drawText('PRESS SPACE TO SPEAK', W / 2, H - 24, C.g, 1.5, 'center', false);
+  }
   drawHUD();
 }
 function drawBackground(type) {
