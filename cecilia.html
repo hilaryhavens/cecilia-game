@@ -1556,6 +1556,16 @@ function initRoom() {
   };
 }
 function updateRoom() {
+  if (room.leaving) {
+    room.fade++;
+    if (room.fade >= 45) {                // ~0.75s fade, then the story resumes
+      state = 'scene';
+      currentSceneIdx = 12;               // Harrel's storm plea - linear flow from here
+      setupScene();
+    }
+    return;
+  }
+  if (room.doorFlash > 0) room.doorFlash--;
   if (room.talk) {
     if (room.talk.idx < room.talk.line.length) {
       room.talk.idx++;
@@ -1582,6 +1592,12 @@ function updateRoom() {
     room.px = room.px < bump.x ? bump.x - 30 : bump.x + 30;
   }
   if (keyPressed('Space') || keyPressed('Enter')) {
+    const atDoor = room.doorOpen && room.px > 345 && room.px < 455 && room.py < 330;
+    if (atDoor) {
+      playSound('select');
+      room.leaving = true;
+      return;
+    }
     const n = nearNpc();
     if (n && !room.met[n.key]) {          // first meeting: detour into their scene
       playSound('select');
@@ -1597,6 +1613,7 @@ function updateRoom() {
 }
 function drawRoom() {
   drawBackground('room');
+  const atDoor = room.doorOpen && room.px > 345 && room.px < 455 && room.py < 330;
   const figures = ROOM_NPCS.map(n => ({ n, y: n.y })).concat([{ cecilia: true, y: room.py }]);
   figures.sort((a, b) => a.y - b.y);
   for (const f of figures) {
@@ -1612,6 +1629,10 @@ function drawRoom() {
       }
     }
   }
+  if (room.doorFlash > 0 && Math.floor(frame / 15) % 2 === 0)
+    drawText('THE DOOR STANDS OPEN', W / 2, 120, C.g, 2, 'center');
+  if (atDoor && !room.talk && Math.floor(frame / 30) % 2 === 0)
+    drawText('PRESS SPACE TO DEPART', W / 2, H - 24, C.g, 1.5, 'center', false);
   if (room.talk) {
     // compact speech box, styled after drawDialogue but only ~1/4 screen tall
     const bT = 468;
@@ -1627,10 +1648,14 @@ function drawRoom() {
       drawText('PRESS SPACE', W - 230, H - 32, C.g, 1.5, 'left', false);
   }
   const near = nearNpc();
-  if (near && !room.talk && Math.floor(frame / 30) % 2 === 0) {
+  if (near && !atDoor && !room.talk && Math.floor(frame / 30) % 2 === 0) {
     drawText('PRESS SPACE TO SPEAK', W / 2, H - 24, C.g, 1.5, 'center', false);
   }
   drawHUD();
+  if (room.leaving) {
+    ctx.fillStyle = `rgba(0,0,0,${Math.min(1, room.fade / 45)})`;
+    ctx.fillRect(0, 0, W, H);
+  }
 }
 function drawBackground(type) {
   switch (type) {
