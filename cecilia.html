@@ -998,6 +998,7 @@ const SCENES = [
   {
     bg: 'london', speaker: '',
     text: "And so our heroine sets out into Georgian London, where suitors of all kinds await - some noble, some foolish, and some most dangerous indeed...",
+    onContinue: () => { state = 'room'; initRoom(); }
   },
   {
     bg: 'manor', speaker: 'MR. BRIGGS',
@@ -1224,6 +1225,7 @@ function resetGame() {
   choiceIdx = 0;
   currentEndingType = null;
   mg = null;
+  room = null;
 }
 
 // === INPUT ===
@@ -1499,6 +1501,35 @@ function drawCoinSpill(cx, gy) {
 }
 // === GEORGIAN ROOM (hub) — state lives here; initialised by initRoom() ===
 let room = null;
+function initRoom() {
+  room = {
+    px: W / 2, py: 560, facing: 1,   // Cecilia's feet
+    met: {},                          // npc key -> true once their intro scene played
+    pendingMeet: null,                // npc key whose scene is currently detoured into
+    doorOpen: false, doorFlash: 0,
+    talk: null,                       // active flavor-line box: { name, line, idx }
+    leaving: false, fade: 0
+  };
+}
+function updateRoom() {
+  const SPD = 2.5;
+  let dx = 0, dy = 0;
+  if (keys['ArrowRight'] || keys['KeyD']) dx = SPD;
+  else if (keys['ArrowLeft'] || keys['KeyA']) dx = -SPD;
+  if (keys['ArrowDown'] || keys['KeyS']) dy = SPD;
+  else if (keys['ArrowUp'] || keys['KeyW']) dy = -SPD;
+  if (dx) room.facing = dx > 0 ? 1 : -1;
+  room.px = Math.max(30, Math.min(W - 30, room.px + dx));
+  room.py = Math.max(310, Math.min(585, room.py + dy));
+  room.moving = !!(dx || dy);
+}
+function drawRoom() {
+  drawBackground('room');
+  // Cecilia, feet at (px, py), walker sprite at minigame scale with walk-bob
+  const bob = room.moving ? Math.sin(frame * 0.3) : 0;
+  drawSprite(SP.ceciliaWalk, room.px - 24, room.py - 64 + bob, 2, C, true);
+  drawHUD();
+}
 function drawBackground(type) {
   switch (type) {
     case 'title': {
@@ -2285,6 +2316,8 @@ function update() {
       currentSceneIdx = 1;
       setupScene();
     }
+  } else if (state === 'room') {
+    updateRoom();
   } else if (state === 'scene') {
     if (textIdx < fullText.length) {
       textTimer++;
@@ -2350,6 +2383,8 @@ function draw() {
   if (state === 'title') {
     drawBackground('title');
     drawTitle();
+  } else if (state === 'room') {
+    drawRoom();
   } else if (state === 'scene') {
     drawBackground(currentScene.bg);
     if (currentScene.character) drawCharacter(currentScene.character);
