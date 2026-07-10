@@ -1028,7 +1028,6 @@ const SCENES = [
     character: 'monckton',
     choices: [
       { text: "'How kind. Tell me more.'", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
-      { text: "'Sir, I am not for sale!'", effect: (gs) => { gs.stats.virtue += 1; gs.suitors.monckton -= 1; clampVirtue(gs); } },
       { text: "'Sir, your concern is noted.'", effect: (gs) => {} }
     ],
     onContinue: returnFromRoomDetour,
