@@ -1552,10 +1552,16 @@ function initRoom() {
     pendingMeet: null,                // npc key whose scene is currently detoured into
     doorOpen: false, doorFlash: 0,
     talk: null,                       // active flavor-line box: { name, line, idx }
-    leaving: false, fade: 0
+    leaving: false, fade: 0,
+    intro: true,                      // one-time instruction banner, dismissed on first key press
   };
 }
 function updateRoom() {
+  if (room.intro) {
+    for (const k in keys) {
+      if (keys[k] === true && !k.endsWith('_p')) { room.intro = false; break; }
+    }
+  }
   if (room.leaving) {
     room.fade++;
     if (room.fade >= 45) {                // ~0.75s fade, then the story resumes
@@ -1654,6 +1660,12 @@ function drawRoom() {
     drawText('PRESS SPACE TO SPEAK', W / 2, H - 24, C.g, 1.5, 'center', false);
   }
   drawHUD();
+  if (room.intro) {
+    fillRect(W / 2 - 310, 74, 620, 52, C.k);
+    fillRect(W / 2 - 310, 74, 620, 3, C.w);
+    drawText('SPEAK WITH EVERYONE BEFORE YOU MAY DEPART', W / 2, 84, C.w, 1.5, 'center');
+    drawText('ARROWS WALK - SPACE SPEAK', W / 2, 106, C.c, 1, 'center');
+  }
   if (room.leaving) {
     ctx.fillStyle = `rgba(0,0,0,${Math.min(1, room.fade / 45)})`;
     ctx.fillRect(0, 0, W, H);
