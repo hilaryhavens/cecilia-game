@@ -1208,6 +1208,7 @@ function chooseEnding(type) {
 }
 function setupScene() {
   if (state === 'ending') return;
+  for (const k in keys) if (k.endsWith('_p')) keys[k] = false;  // a press from a previous scene/minigame never carries into this one
   // Skip any scene whose condition(gs) is false.
   while (currentSceneIdx < SCENES.length) {
     const sc = SCENES[currentSceneIdx];
@@ -1610,6 +1611,7 @@ function returnFromRoomDetour() {
   }
 }
 function initRoom() {
+  for (const k in keys) if (k.endsWith('_p')) keys[k] = false;  // a stray press during earlier scenes must not pre-dismiss the intro banner
   room = {
     px: W / 2, py: 560,               // Cecilia's feet
     met: {},                          // npc key -> true once their intro scene played
