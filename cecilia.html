@@ -2062,6 +2062,169 @@ function drawBackground(type) {
       }
       break;
     }
+    case 'castlehall': {
+      // The great hall of Delvile Castle: ashlar stone walls, arched windows,
+      // heraldic banners, ancestral portraits, a stone fireplace, flag floor.
+      // Shares the Georgian room's geometry (WALL_B=300, door 345-455/140) so
+      // the room engine's door zone lands on the drawn door unchanged.
+      const WALL_B = 300;
+      fillRect(0, 0, W, WALL_B, C.o);                       // stone wall
+      for (let y = 40; y < WALL_B; y += 34)                 // ashlar courses
+        fillRect(0, y, W, 2, C.u);
+      for (let y = 40; y < WALL_B; y += 34)
+        for (let x = (y / 34) % 2 === 0 ? 0 : 40; x < W; x += 80)
+          fillRect(x, y, 2, 34, C.u);                       // staggered joints
+      // two arched windows flanking the door
+      for (const wx of [150, 610]) {
+        fillRect(wx - 6, 70, 52, 146, C.u);                 // surround
+        fillRect(wx, 90, 40, 126, C.n);                     // night glass
+        fillRect(wx + 4, 94, 32, 118, C.l);                 // moonlit panes
+        fillRect(wx + 18, 94, 4, 118, C.u);                 // mullion
+        fillRect(wx + 4, 148, 32, 4, C.u);                  // transom
+        fillRect(wx + 6, 76, 28, 14, C.u);                  // arch head
+        fillRect(wx + 12, 70, 16, 8, C.u);
+      }
+      // heraldic banners either side of the door
+      for (const bx of [300, 472]) {
+        fillRect(bx - 6, 96, 40, 6, C.L);                   // pole
+        fillRect(bx, 102, 28, 64, C.F);                     // red field
+        for (let i = 0; i < 4; i++) fillRect(bx + 4 + i * 5, 122 + i * 4, 5, 4, C.g); // gold chevron
+        fillRect(bx, 158, 12, 8, C.F); fillRect(bx + 16, 158, 12, 8, C.F);            // swallowtail
+      }
+      // ancestral portraits between the windows and banners
+      for (const px2 of [60, 230, 540, 706]) {
+        fillRect(px2, 100, 40, 52, C.L);                    // frame
+        fillRect(px2 + 4, 104, 32, 44, C.a);                // canvas ground
+        fillRect(px2 + 12, 110, 16, 14, C.s);               // ancestral face
+        fillRect(px2 + 10, 124, 20, 18, C.u);               // dark coat
+        fillRect(px2 + 12, 108, 16, 4, C.G);                // powdered wig
+      }
+      // grand double door, centred - same geometry as the Georgian room
+      const DL = 345, DR = 455, DT = 140;
+      fillRect(DL - 14, DT - 16, (DR - DL) + 28, 10, C['+']); // stone lintel
+      fillRect(DL - 10, DT - 6, (DR - DL) + 20, 6, C['+']);
+      fillRect(DL - 8, DT, 4, WALL_B - DT, C['+']);           // stone jambs
+      fillRect(DR + 4, DT, 4, WALL_B - DT, C['+']);
+      if (room && room.doorOpen) {
+        fillRect(DL, DT, DR - DL, WALL_B - DT, C.k);          // dark passage beyond
+        fillRect(DL, DT, 10, WALL_B - DT, C.t);               // leaves swung edge-on
+        fillRect(DR - 10, DT, 10, WALL_B - DT, C.t);
+      } else {
+        for (const lx of [DL, DL + (DR - DL) / 2]) {          // two shut oak leaves
+          const lw = (DR - DL) / 2;
+          fillRect(lx, DT, lw, WALL_B - DT, C.t);
+          fillRect(lx + 6, DT + 12, lw - 12, 56, C.a);        // two long panels
+          fillRect(lx + 6, DT + 80, lw - 12, 66, C.a);
+          for (let i = 0; i < 4; i++) fillRect(lx + 10 + i * 12, DT + 4, 4, 4, C.k); // iron studs
+        }
+        fillRect(DL + (DR - DL) / 2 - 6, DT + 78, 4, 8, C.g); // ring handles
+        fillRect(DL + (DR - DL) / 2 + 2, DT + 78, 4, 8, C.g);
+      }
+      // stone fireplace, left: heavy lintel, firebox, embers
+      const fx = 40, fy = WALL_B - 118;
+      fillRect(fx - 8, fy - 12, 96, 10, C['+']);            // lintel
+      fillRect(fx - 4, fy, 8, 90, C['+']);                  // jambs
+      fillRect(fx + 76, fy, 8, 90, C['+']);
+      fillRect(fx + 4, fy, 72, 90, C.k);                    // firebox
+      if ((frame % 24) < 16) fillRect(fx + 22, fy + 48, 36, 22, C.x);
+      fillRect(fx + 26, fy + 34 + ((frame % 14) < 7 ? 2 : 0), 28, 22, C.y);
+      fillRect(fx + 34, fy + 24 + ((frame % 10) < 5 ? 3 : 0), 12, 14, C.w);
+      // torch sconces on the wall
+      for (const sx of [260, 520]) {
+        fillRect(sx, 200, 6, 22, C.L);
+        if ((frame + sx) % 22 < 16) fillRect(sx - 2, 188, 10, 14, C.x);
+        fillRect(sx, 192 + ((frame + sx) % 12 < 6 ? 2 : 0), 6, 8, C.y);
+      }
+      // stone-flag floor - the walkable plane
+      for (let y = WALL_B; y < H; y += 30)
+        for (let x = (Math.floor(y / 30) % 2) * 20; x < W; x += 40)
+          fillRect(x, y, 38, 28, (Math.floor(x / 40) + Math.floor(y / 30)) % 3 === 0 ? C.u : C.o);
+      for (let y = WALL_B; y < H; y += 30) fillRect(0, y, W, 2, C.k);
+      break;
+    }
+    case 'castle': {
+      // Delvile Castle, full-screen exterior at dusk: crenellated towers, a
+      // gatehouse with raised portcullis, moat and lowered drawbridge.
+      fillRect(0, 0, W, H, C.n);                            // dusk sky
+      for (let i = 0; i < 20; i++)                          // early stars
+        if ((i * 89) % 7 !== 0) fillRect((i * 137) % W, (i * 53) % 180, 2, 2, C.C);
+      fillRect(0, 60, W, 26, C.u);                          // cloud bank
+      fillRect(120, 78, 300, 14, C.u);
+      // corner towers
+      for (const tx of [130, 560]) {
+        fillRect(tx, 150, 110, 280, C.o);
+        for (let i = 0; i < 4; i++) fillRect(tx + i * 30, 136, 20, 14, C.o); // crenellations
+        fillRect(tx + 20, 200, 12, 34, C.k);                // arrow slits
+        fillRect(tx + 70, 200, 12, 34, C.k);
+        fillRect(tx + 44, 280, 16, 40, C.k);
+        fillRect(tx, 150, 110, 4, C['+']);                  // parapet light
+      }
+      // main wall between the towers
+      fillRect(230, 220, 340, 210, C.o);
+      for (let i = 0; i < 9; i++) fillRect(236 + i * 38, 206, 22, 14, C.o);
+      fillRect(230, 220, 340, 4, C['+']);
+      fillRect(280, 260, 14, 24, C.k); fillRect(506, 260, 14, 24, C.k); // windows
+      // gatehouse with raised portcullis
+      fillRect(340, 250, 120, 180, C.u);
+      fillRect(364, 310, 72, 120, C.k);                     // gate arch
+      fillRect(372, 298, 56, 12, C.k);
+      for (let i = 0; i < 5; i++) fillRect(368 + i * 14, 310, 4, 52, C.L);  // portcullis, raised
+      // moat across the lower third
+      fillRect(0, 430, W, 70, C.Z);
+      fillRect(0, 430, W, 6, C.l);
+      fillRect(120, 462, 200, 4, C.l); fillRect(480, 474, 180, 4, C.l);     // glints
+      // lowered drawbridge, centred, meeting the gate
+      fillRect(364, 430, 72, 70, C.t);
+      fillRect(364, 430, 72, 4, C.L);
+      fillRect(364, 452, 72, 3, C.a); fillRect(364, 476, 72, 3, C.a);       // plank joins
+      for (let i = 0; i < 5; i++) {                          // chains up to the gatehouse
+        fillRect(352 - i * 2, 424 - i * 22, 4, 6, C['+']);
+        fillRect(444 + i * 2, 424 - i * 22, 4, 6, C['+']);
+      }
+      fillRect(0, 500, W, H - 500, C.q);                     // near bank
+      fillRect(0, 500, W, 8, C.j);
+      break;
+    }
+    case 'stormwood': {
+      // A wood at night in a storm: wind-bent trees, driving rain, and a
+      // lightning flash every few seconds (the sky washes pale, a jagged
+      // bolt drops to the treeline).
+      const flash = frame % 180 < 12;
+      fillRect(0, 0, W, H, flash ? C.C : C.n);              // sky (washed pale in the flash)
+      fillRect(0, 0, W, 90, flash ? C.l : C.k);             // cloud ceiling
+      fillRect(60, 70, 300, 24, flash ? C.l : C.u);         // ragged cloud bellies
+      fillRect(420, 56, 320, 28, flash ? C.l : C.u);
+      // ground
+      fillRect(0, H - 210, W, 210, flash ? C.d : '#04140A');
+      fillRect(0, H - 210, W, 6, flash ? C.v : C.d);
+      // five wind-bent trees, silhouetted; canopies streamed to the right
+      for (let i = 0; i < 5; i++) {
+        const tx = 60 + i * 165, th = 150 + (i % 3) * 40, ty = H - 210;
+        for (let s = 0; s < 6; s++)                          // trunk arcs rightward
+          fillRect(tx + s * 6, ty - (s + 1) * th / 6, 12, th / 6 + 2, C.k);
+        const cx2 = tx + 40, cy2 = ty - th - 10;             // canopy blown right
+        fillRect(cx2, cy2, 90, 26, C.k);
+        fillRect(cx2 + 16, cy2 - 16, 84, 20, C.k);
+        fillRect(cx2 + 30, cy2 + 22, 70, 14, C.k);
+      }
+      // lightning bolt, jagged, dropping from the cloud to the treeline
+      if (flash) {
+        let by2 = 40, bxx = 310;
+        for (const [dx, len] of [[0, 64], [-20, 56], [14, 60], [-16, 52], [10, 48]]) {
+          fillRect(bxx += dx, by2, 8, len, C.w);
+          fillRect(bxx + 2, by2, 3, len, C.C);
+          by2 += len - 6;
+        }
+      }
+      // driving rain, angled with the wind
+      for (let i = 0; i < 110; i++) {
+        const rx = (i * 37 + frame * 9) % (W + 60) - 30;
+        const ry = (i * 71 + frame * 16) % H;
+        fillRect(rx, ry, 2, 9, flash ? C.w : C.l);
+        fillRect(rx - 2, ry + 9, 2, 3, flash ? C.w : C.l);   // slanted tail
+      }
+      break;
+    }
     case 'garden': {
       fillRect(0, 0, W, H - 150, C.z);
       fillRect(50, 40, 40, 40, C.g);
@@ -2251,16 +2414,19 @@ function drawSpeakerGround(bg, top) {
   switch (bg) {
     case 'garden':
     case 'manor':   face = C.v; edge = C.h;    tex = C.d; break;  // lawn / grass
+    case 'stormwood': face = C.d; edge = C.v;  tex = C.k; break;  // storm-lashed grass
     case 'london':  face = C.o; edge = C['+']; tex = C.k; break;  // stone pavement
     case 'storm':   face = C.u; edge = C.o;    tex = C.k; break;  // wet flagstones
+    case 'castle':
+    case 'castlehall': face = C.o; edge = C['+']; tex = C.u; break; // castle stone
     case 'ballroom':
     default:        face = C.t; edge = C.q;    tex = C.a; break;  // polished wood
   }
   fillRect(0, top, W, h, face);
   fillRect(0, top, W, 4, edge);                         // lit front edge of the floor
-  if (bg === 'garden' || bg === 'manor') {
+  if (bg === 'garden' || bg === 'manor' || bg === 'stormwood') {
     for (let x = 0; x < W; x += 14) fillRect(x, top, 3, 5, tex);          // grass blades
-  } else if (bg === 'london' || bg === 'storm') {
+  } else if (bg === 'london' || bg === 'storm' || bg === 'castle' || bg === 'castlehall') {
     fillRect(0, top + Math.floor(h / 2), W, 2, tex);                      // course joint
     for (let x = 18; x < W; x += 40) fillRect(x, top + 5, 2, h - 5, tex); // cobble seams
   } else {
