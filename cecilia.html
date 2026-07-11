@@ -1241,10 +1241,17 @@ function resetGame() {
 
 // === INPUT ===
 const keys = {};
+// Browsers keep the AudioContext suspended until a user gesture, so the music
+// starts on the FIRST interaction of any kind — a click on the page or any key.
+function wakeAudio() {
+  if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume(); return true; }
+  return false;
+}
+window.addEventListener('pointerdown', wakeAudio);
 window.addEventListener('keydown', (e) => {
   if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'].includes(e.code)) e.preventDefault();
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  if (e.code === 'KeyM') { musicOn = !musicOn; if (musicOn) { mBar = 0; mIdx = 0; bIdx = 0; } }
+  const woke = wakeAudio();   // a first M just wakes the audio; it must not also mute it
+  if (e.code === 'KeyM' && !woke) { musicOn = !musicOn; if (musicOn) { mBar = 0; mIdx = 0; bIdx = 0; } }
   if (!keys[e.code]) keys[e.code + '_p'] = true;
   keys[e.code] = true;
 });
