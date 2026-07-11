@@ -2620,7 +2620,7 @@ function drawMinigame() {
     // feet planted on the world ground line; dimmed once she has given / jumped past.
     const sp = SP[TARGET_SPRITE[t.who]] || SP.mgFamily;
     const consumed = t.given || t.hit;
-    const sc = t.kind === 'worthy' ? 1.7 : 2;
+    const sc = t.kind === 'worthy' ? 2.6 : 3;
     const sx = Math.floor(t.x + t.w / 2 - (24 * sc) / 2);
     const sy = Math.floor(410 - sp.length * sc + bob);
     if (consumed) ctx.globalAlpha = 0.35;
@@ -2628,28 +2628,28 @@ function drawMinigame() {
     ctx.globalAlpha = 1;
     if (t.kind === 'worthy') {
       if (!t.given) {
-        fillRect(t.x - 14, t.y + bob - 62, 96, 48, C.d);          // green banner
-        fillRect(t.x - 14, t.y + bob - 62, 96, 3, C.h);
-        drawText('WORTHY', t.x - 8, t.y + bob - 58, C.h, 1, 'left', false);
-        drawText(name, t.x - 10, t.y + bob - 44, C.w, 1, 'left', false);
-        drawText('GIVE £25', t.x - 10, t.y + bob - 28, C.g, 1, 'left', false);
+        fillRect(t.x - 16, t.y + bob - 116, 150, 74, C.d);          // green banner
+        fillRect(t.x - 16, t.y + bob - 116, 150, 4, C.h);
+        drawText('WORTHY', t.x - 10, t.y + bob - 108, C.h, 1.5, 'left', false);
+        drawText(name, t.x - 10, t.y + bob - 86, C.w, 1.5, 'left', false);
+        drawText('GIVE £25', t.x - 10, t.y + bob - 64, C.g, 1.5, 'left', false);
       } else {
-        drawText('✓', t.x + 8, t.y + bob - 22, C.h, 1, 'left', false);
+        drawText('✓', t.x + 8, t.y + bob - 30, C.h, 1.5, 'left', false);
       }
     } else {
       if (!t.hit) {
-        fillRect(t.x - 16, t.y + bob - 66, 138, 52, C.I);         // red banner
-        fillRect(t.x - 16, t.y + bob - 66, 138, 3, C.r);
-        drawText('SPENDTHRIFT', t.x - 12, t.y + bob - 62, C.r, 1, 'left', false);
-        drawText(name, t.x - 12, t.y + bob - 46, C.w, 1, 'left', false);
-        drawText('JUMP! £' + t.cost.toLocaleString('en-GB'), t.x - 12, t.y + bob - 30, C.x, 1, 'left', false);
+        fillRect(t.x - 18, t.y + bob - 128, 208, 82, C.I);          // red banner
+        fillRect(t.x - 18, t.y + bob - 128, 208, 4, C.r);
+        drawText('SPENDTHRIFT', t.x - 12, t.y + bob - 120, C.r, 1.5, 'left', false);
+        drawText(name, t.x - 12, t.y + bob - 98, C.w, 1.5, 'left', false);
+        drawText('JUMP! £' + t.cost.toLocaleString('en-GB'), t.x - 12, t.y + bob - 76, C.x, 1.5, 'left', false);
       }
     }
   }
   // Player
   const px = Math.floor(mg.player.x);
   const py = Math.floor(mg.player.y);
-  drawSprite(SP.ceciliaWalk, px, py + 4 + (mg.player.onGround && Math.abs(mg.player.vx) > 0.5 ? Math.sin(mg.levelTime * 0.3) : 0), 2, C, true);
+  drawSprite(SP.ceciliaWalk, px - 12, py - 28 + (mg.player.onGround && Math.abs(mg.player.vx) > 0.5 ? Math.sin(mg.levelTime * 0.3) : 0), 3, C, true);
   // End marker: Delvile Castle — stone towers behind a moat, drawbridge down to meet her
   const cX = mg.endX;
   // moat (water in front of the walls) and far bank
@@ -2694,12 +2694,13 @@ function drawMinigame() {
   fillRect(W - 280, 60, 250, 25, C.k);
   fillRect(W - 278, 62, 246, 21, C.u);
   fillRect(W - 278, 62, 246 * Math.min(mg.player.x / mg.endX, 1), 21, C.v);
-  drawText('THE STREET', W - 275, 65, C.w, 1, 'left', false);
+  drawText('THE STREET', W - 275, 66, C.w, 1.5, 'left', false);
   // instruction banner: tell the player exactly who to give to
-  fillRect(W / 2 - 300, 18, 600, 24, C.k);
-  fillRect(W / 2 - 300, 18, 600, 3, C.w);
-  drawText('GIVE TO THE WORTHY (GREEN, DOWN)   -   JUMP OVER SPENDTHRIFTS (RED)', W / 2, 25, C.w, 1, 'center');
-  drawText('←→ WALK   ↓/S GIVE   SPACE JUMP', W / 2, H - 25, C.c, 1, 'center');
+  fillRect(W / 2 - 300, 14, 600, 52, C.k);
+  fillRect(W / 2 - 300, 14, 600, 3, C.w);
+  drawText('GIVE TO THE WORTHY (GREEN, DOWN)', W / 2, 22, C.w, 1.5, 'center');
+  drawText('JUMP OVER SPENDTHRIFTS (RED)', W / 2, 42, C.r, 1.5, 'center');
+  drawText('←→ WALK   ↓/S GIVE   SPACE JUMP', W / 2, H - 28, C.c, 1.5, 'center');
 }
 
 // === DELIRIUM CHASE ===
