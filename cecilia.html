@@ -2564,16 +2564,25 @@ function drawTitle() {
 
 function drawChoices(choices) {
   if (!choices || textIdx < fullText.length) return;
-  const startY = choiceStartY || 430;
-  const pitch = 40, bx = 50, bw = 700, bh = 34;
+  const bx = 50, bw = 700, gap = 6;
+  const CH = 38;      // scale-2 chars that fit the 700px button beside the cursor gutter
+  const layouts = choices.map(c => wrapText(c.text, CH));
+  let cy = choiceStartY || 430;
+  // Overflow guard: keep the whole block above the box's bottom border (y 592).
+  const total = layouts.reduce((s, l) => s + (l.length === 1 ? 36 : 60), 0)
+              + gap * (choices.length - 1);
+  cy = Math.min(cy, Math.max(330, 592 - total));
   for (let i = 0; i < choices.length; i++) {
-    const cy = startY + i * pitch;
+    const lines = layouts[i];
+    const bh = lines.length === 1 ? 36 : 60;
     const selected = i === choiceIdx;
     fillRect(bx, cy, bw, bh, selected ? C.n : C.k);
     fillRect(bx + 4, cy + 4, bw - 8, bh - 8, selected ? C.B : C.u);
-    if (selected) drawText('►', bx + 14, cy + 11, C.y, 1.5, 'left', false);
-    const csz = choices[i].text.length > 54 ? 1 : 1.5;           // long lines drop to the small font so they never overflow the button
-    drawText(choices[i].text, bx + 44, cy + 11 + (csz === 1 ? 3 : 0), selected ? C.w : C.c, csz, 'left', false);
+    if (selected) drawText('►', bx + 14, cy + (bh - 12) / 2, C.y, 1.5, 'left', false);
+    const ty = cy + (bh - (16 + (lines.length - 1) * 24)) / 2;
+    for (let j = 0; j < lines.length; j++)
+      drawText(lines[j], bx + 44, ty + j * 24, selected ? C.w : C.c, 2, 'left', false);
+    cy += bh + gap;
   }
 }
 
