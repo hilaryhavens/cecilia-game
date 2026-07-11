@@ -1001,7 +1001,7 @@ const SCENES = [
   {
     bg: 'london', speaker: '',
     text: "And so our heroine sets out into Georgian London, where suitors of all kinds await - some noble, some foolish, and some most dangerous indeed...",
-    onContinue: () => { state = 'room'; initRoom(); }
+    onContinue: () => { state = 'room'; initRoom('georgian'); }
   },
   {
     bg: 'miser', speaker: 'MR. BRIGGS',
@@ -1586,7 +1586,7 @@ let room = null;
 // The eight acquaintances, waiting about the room. x,y = feet position;
 // sceneIdx = their existing intro scene (played once, as a detour);
 // line = the one repeat-conversation flavor line (approved copy — verbatim).
-const ROOM_NPCS = [
+const GEORGIAN_NPCS = [
   { key: 'briggs',     name: 'MR. BRIGGS',        sceneIdx: 4,  x:  90, y: 350,
     line: "If you don't know the value of sixpence, you'll never be worth fivepence three farthings." },
   { key: 'mrsdelvile', name: 'MRS. DELVILE',      sceneIdx: 5,  x: 215, y: 335,
@@ -1604,8 +1604,13 @@ const ROOM_NPCS = [
   { key: 'albany',     name: 'OLD ALBANY',        sceneIdx: 11, x: 280, y: 560,
     line: "Still here, among the gilded and the idle? Go forth! The poor wait upon your bounty, and time waits upon no one." }
 ];
+// Each walkable hub room: background case name, its cast, and where the linear
+// story resumes when the player departs through the opened door.
+const ROOMS = {
+  georgian: { bg: 'room', npcs: GEORGIAN_NPCS, resumeIdx: 12 }
+};
 function nearNpc() {
-  for (const n of ROOM_NPCS)
+  for (const n of room.cfg.npcs)
     if (Math.abs(room.px - n.x) < 64 && Math.abs(room.py - n.y) < 48) return n;
   return null;
 }
@@ -1614,15 +1619,16 @@ function returnFromRoomDetour() {
   if (!room) { currentSceneIdx++; setupScene(); return; }
   if (room.pendingMeet) { room.met[room.pendingMeet] = true; room.pendingMeet = null; }
   state = 'room';
-  if (!room.doorOpen && ROOM_NPCS.every(n => room.met[n.key])) {
+  if (!room.doorOpen && room.cfg.npcs.every(n => room.met[n.key])) {
     room.doorOpen = true;
     room.doorFlash = 150;
     playSound('chime');
   }
 }
-function initRoom() {
+function initRoom(roomKey) {
   for (const k in keys) if (k.endsWith('_p')) keys[k] = false;  // a stray press during earlier scenes must not pre-dismiss the intro banner
   room = {
+    cfg: ROOMS[roomKey],              // which room this is: cast, background, resume point
     px: W / 2, py: 560,               // Cecilia's feet
     met: {},                          // npc key -> true once their intro scene played
     pendingMeet: null,                // npc key whose scene is currently detoured into
@@ -1642,7 +1648,7 @@ function updateRoom() {
     room.fade++;
     if (room.fade >= 45) {                // ~0.75s fade, then the story resumes
       state = 'scene';
-      currentSceneIdx = 12;               // Harrel's storm plea - linear flow from here
+      currentSceneIdx = room.cfg.resumeIdx;   // linear flow resumes here (georgian: Harrel's storm plea)
       keys['ArrowUp_p'] = keys['ArrowDown_p'] = keys['KeyW_p'] = keys['KeyS_p'] = false;
       keys['Space_p'] = keys['Enter_p'] = false;
       setupScene();
@@ -1696,9 +1702,9 @@ function updateRoom() {
   }
 }
 function drawRoom() {
-  drawBackground('room');
+  drawBackground(room.cfg.bg);
   const atDoor = room.doorOpen && room.px > 345 && room.px < 455 && room.py < 330;
-  const figures = ROOM_NPCS.map(n => ({ n, y: n.y })).concat([{ cecilia: true, y: room.py }]);
+  const figures = room.cfg.npcs.map(n => ({ n, y: n.y })).concat([{ cecilia: true, y: room.py }]);
   figures.sort((a, b) => a.y - b.y);
   for (const f of figures) {
     if (f.cecilia) {
