@@ -1055,7 +1055,7 @@ const SCENES = [
     character: 'mrsdelvile',
     choices: [
       { text: "Greet Mortimer Delvile warmly.", effect: (gs) => { gs.suitors.delvile += 1; gs.stats.hearts += 1; clampHearts(gs); } },
-      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue -= 1; clampVirtue(gs); } }
+      { text: "Thank her politely but keep a distance.", effect: (gs) => { gs.stats.virtue -= 1; clampVirtue(gs); } }
     ],
     onContinue: returnFromRoomDetour,
   },
@@ -1091,7 +1091,7 @@ const SCENES = [
   },
   {
     bg: 'ballroom', speaker: 'SIR ROBERT FLOYER',
-    text: "Sir Robert Floyer surveys you at his leisure, as a man appraises a horse at Tattersall's. 'So this is the heiress. You may account yourself fortunate, Miss Beverley - I have determined to have you.'",
+    text: "Sir Robert Floyer surveys you as a man appraises a horse at Tattersall's. 'You may account yourself fortunate, Miss Beverley - I have determined to have you.'",
     character: 'floyer',
     choices: [
       { text: "Cast your eyes downward, but do not leave.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
@@ -1149,7 +1149,7 @@ const SCENES = [
   },
   { // Elder Mr. Delvile asserts the family's name-pride
     bg: 'castle', speaker: 'MR. DELVILE',
-    text: "'Miss Beverley. The name of Delvile has descended unsullied for centuries. I will not see it bartered, nor bent to suit a fortune - however large. You will understand a father's duty.'",
+    text: "'Miss Beverley. The name of Delvile has descended unsullied for centuries. I will not see it bartered to suit a fortune - however large.'",
     character: 'elderdelvile',
     choices: [
       { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => {} },
