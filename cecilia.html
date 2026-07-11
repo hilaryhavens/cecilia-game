@@ -1293,31 +1293,29 @@ function playSound(type) {
 }
 
 // === BACKGROUND MUSIC — Handel, "Empio, dirò, tu sei" (Giulio Cesare, HWV 17) ===
-// Loopable C-MINOR arrangement transcribed from the score (Allegro, 3 flats), in two
-// sections for a longer loop:
-//  A) the OPENING RITORNELLO — the brilliant descending C-minor sixteenth-note
-//     cascade from the top of the staff (m.1), rebounding and turning (m.2);
-//  B) Cesare's VOCAL THEME — the opening turn (C5-Bb4-C5) tumbling down a C-minor
-//     scale ("Empio, dirò, tu sei"), a low line rising to the leading tone Bn4
-//     ("togliti agli occhi miei"), and a cadence ("sei tutto crudeltà").
-// Over a striding i-V / iv-V continuo. Synth-only; M still mutes.
+// Loopable C-MINOR arrangement transcribed from the el-atril vocal-score reduction
+// (Act I Sc. III, pp.16-19; Allegro, 3 flats). The loop now traces the whole
+// da-capo aria: A section (ritornello → vocal statement 1 + cadential melisma →
+// ritornello fragment → statement 2, the score's own G-MINOR variation with its
+// repeated-note declamation and F#/En leading tones → closing cadence, "Fine") →
+// B SECTION ("Non è da Rè quel cor", mm.43-58: C minor through Db/f-minor colour
+// to G minor, ending on a held dominant at "Da Capo") → loop = the da capo itself.
+// Over a striding continuo. Synth-only; M still mutes. 'R' entries are rests.
 let musicOn = true;
 const NF = { // note frequencies (Hz)
-  G2:98.00, C3:130.81, Eb3:155.56, F3:174.61, G3:196.00,
-  C4:261.63, D4:293.66, Eb4:311.13, F4:349.23, G4:392.00, Ab4:415.30, Bb4:466.16, Bn4:493.88,
-  C5:523.25, D5:587.33, Eb5:622.25, F5:698.46, G5:783.99, Ab5:830.61, Bb5:932.33, C6:1046.50
+  G2:98.00, Ab2:103.83, Bb2:116.54, C3:130.81, Db3:138.59, D3:146.83, Eb3:155.56, F3:174.61, G3:196.00, Ab3:207.65,
+  C4:261.63, D4:293.66, Eb4:311.13, En4:329.63, F4:349.23, Fs4:369.99, G4:392.00, Ab4:415.30, A4:440.00, Bb4:466.16, Bn4:493.88,
+  C5:523.25, Db5:554.37, D5:587.33, Eb5:622.25, F5:698.46, G5:783.99, Ab5:830.61, Bb5:932.33, C6:1046.50
 };
-const MSPB = 60 / 132; // 132 BPM, Allegro (rage aria)
-// Full A-section of the da-capo aria (the part heard twice via da capo), looped:
-//   ritornello → vocal statement 1 (+ cadential melisma on "crudeltà") →
-//   ritornello fragment → vocal statement 2 → final cadence → (loop).
+const MSPB = 60 / 120; // 120 BPM — Allegro (rage aria), eased a touch from 132
 const MELODY = [
+  // ================= A SECTION =================
   // --- Opening ritornello: descending C-minor cascade from the top, then a turn ---
   ['C6',0.25],['Bb5',0.25],['Ab5',0.25],['G5',0.25],['F5',0.25],['Eb5',0.25],['D5',0.25],['C5',0.25],
   ['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],['C4',0.25],['D4',0.25],
   ['Eb4',0.25],['F4',0.25],['G4',0.25],['Ab4',0.25],['Bb4',0.25],['C5',0.25],['D5',0.25],['Eb5',0.25],
   ['D5',0.5],['C5',0.5],['G4',1],
-  // --- Vocal statement 1 ---
+  // --- Vocal statement 1 (m.10) ---
   // "Em-pio, di-rò, tu sei" — opening turn, then the scale tumbles down
   ['C5',0.5],['Bb4',0.5],['C5',0.5],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.5],['D4',1],
   // "to-gli-ti a glioc-chi miei" — low line rising to the leading tone (Bn4)
@@ -1328,27 +1326,93 @@ const MELODY = [
   ['G4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['F4',0.25],['G4',0.25],['Ab4',0.25],
   ['Bb4',0.25],['C5',0.25],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],
   ['Eb4',0.5],['D4',0.5],['C4',1],['G4',1],['G4',1],   // settle, lift to dominant
-  // --- Ritornello fragment ---
+  // --- Ritornello fragment (m.19) ---
   ['G5',0.25],['F5',0.25],['Eb5',0.25],['D5',0.25],['C5',0.25],['Bb4',0.25],['Ab4',0.25],['G4',0.25],
   ['F4',0.5],['Eb4',0.5],['D4',1],
-  // --- Vocal statement 2 (restatement) ---
-  ['C5',0.5],['Bb4',0.5],['C5',0.5],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.5],['D4',1],
-  ['C4',0.5],['D4',0.5],['Eb4',0.5],['F4',0.5],['G4',0.5],['Ab4',0.5],['G4',0.5],['Bn4',0.5],
-  ['C5',0.5],['Eb5',0.5],['D5',0.5],['C5',0.5],['Bb4',0.5],['Ab4',0.5],['G4',0.5],['F4',0.5],
-  // final cadence to tonic, breathe before the loop
-  ['G4',1],['Bn4',1],['C5',2]
+  // --- Vocal statement 2 (mm.20-27) — the score's own variation, veering to G minor ---
+  // "em-pio, di-rò, tu sei," ×2 — repeated-note declamation over a piano bass
+  ['C5',0.5],['C5',0.25],['C5',0.25],['C5',0.5],['C5',0.5],['D5',1],['R',1],
+  ['D5',0.5],['D5',0.25],['D5',0.25],['D5',0.5],['D5',0.5],['Eb5',1],['R',1],
+  // "to-gli-ti a gli-oc-chi miei," — chromatic turn, F# leading tone appears
+  ['Bb4',0.5],['A4',0.25],['G4',0.25],['C5',0.5],['A4',0.5],['Fs4',1],['R',0.5],['A4',0.5],
+  // "sei tut-to cru-del-tà," — dotted figure, sixteenth pickup into the melisma
+  ['Fs4',0.5],['A4',0.5],['D5',0.75],['C5',0.25],['Bb4',0.5],['R',0.5],['G4',0.25],['A4',0.25],['Bb4',0.25],['C5',0.25],
+  // melisma on "crudeltà" — climbing sixteenths (mm.24-25), F#/En at the turn
+  ['A4',0.25],['G4',0.25],['A4',0.25],['Bb4',0.25],['C5',0.25],['Bb4',0.25],['C5',0.25],['D5',0.25],
+  ['Eb5',0.25],['D5',0.25],['C5',0.25],['Bb4',0.25],['A4',0.25],['Bb4',0.25],['C5',0.25],['A4',0.25],
+  ['Bb4',0.25],['A4',0.25],['Bb4',0.25],['G4',0.25],['A4',0.25],['Bb4',0.25],['C5',0.25],['D5',0.25],
+  ['C5',0.25],['Bb4',0.25],['A4',0.25],['G4',0.25],['Fs4',0.25],['En4',0.25],['Fs4',0.25],['G4',0.25],
+  // "sei tut-to cru-del-tà;" — G-minor cadence (m.27)
+  ['D4',0.5],['A4',0.5],['Bb4',0.25],['A4',0.25],['G4',0.5],['En4',0.5],['Fs4',1.5],
+  ['G4',2],['R',2],
+  // --- Closing ritornello cadence (the "Fine", mm.40-42) — home to C minor ---
+  ['C5',0.25],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],['C4',0.25],
+  ['G4',1],['Bn4',1],['C5',2],['R',2],
+  // ================= B SECTION (mm.43-58) =================
+  // "Non è da Rè quel cor, che" — C minor, declamatory
+  ['G4',0.5],['F4',0.25],['Eb4',0.25],['F4',0.5],['F4',0.5],['G4',1],['R',0.5],['G4',0.5],
+  // "do-na-si al ri-gor," — sixteenth run tumbling down
+  ['Bb4',0.5],['C5',0.25],['Bb4',0.25],['Ab4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',1],['R',1],
+  // "non è da Rè quel cor, che" — the sequence, a step higher
+  ['Ab4',0.5],['G4',0.25],['F4',0.25],['G4',0.5],['G4',0.5],['C5',1],['R',0.5],['C5',0.5],
+  // "do-na-si al ri-gor, che in" — Db colour (toward F minor)
+  ['C5',0.5],['Db5',0.25],['C5',0.25],['Bb4',0.25],['Ab4',0.25],['G4',0.5],['F4',0.5],['R',0.5],['Ab4',0.5],['Bb4',0.5],
+  // "sen non ha pie-tà, che in"
+  ['C5',0.5],['Bb4',0.5],['Ab4',0.75],['Bb4',0.25],['G4',1],['R',0.5],['G4',0.25],['Ab4',0.25],
+  // "sen non ha pie-tà," — higher, Db peak
+  ['A4',0.5],['Bb4',0.5],['C5',0.75],['Db5',0.25],['Bb4',0.5],['R',0.5],['Bb4',0.25],['C5',0.25],['Db5',0.5],
+  // "che in sen non" — melisma descent (m.49)
+  ['C5',0.25],['Bb4',0.25],['A4',0.25],['Bb4',0.25],['G4',0.25],['Ab4',0.25],['F4',0.25],['G4',0.25],
+  ['Eb4',0.5],['F4',0.5],['G4',0.5],['Ab4',0.5],
+  // "ha pie-tà," (m.50)
+  ['A4',1.5],['F4',0.5],['Bb4',2],
+  // "non è da Rè quel cor, che" — pivot toward G minor (m.51)
+  ['G4',0.5],['G4',0.25],['G4',0.25],['A4',0.5],['G4',0.5],['Bn4',1],['R',0.5],['D5',0.5],
+  // "do-na si al ri-gor," — run down the G-minor scale (m.52)
+  ['D5',0.25],['C5',0.25],['Bn4',0.25],['A4',0.25],['G4',0.25],['F4',0.25],['Eb4',0.25],['D4',0.25],
+  ['R',0.5],['G4',0.5],['A4',0.5],['Bb4',0.5],
+  // "che in sen non ha pie-tà," — tied, winding figures (mm.53-54)
+  ['A4',0.5],['G4',0.25],['Fs4',0.25],['G4',0.5],['A4',0.5],['Bb4',0.5],['A4',0.5],['G4',0.5],['A4',0.5],
+  ['Bb4',0.5],['A4',0.5],['G4',0.5],['Fs4',0.5],['A4',0.5],['G4',0.5],['Bb4',0.5],['A4',0.5],
+  // climbing sixteenth sequence (m.55)
+  ['Fs4',0.25],['G4',0.25],['En4',0.25],['Fs4',0.25],['G4',0.25],['A4',0.25],['Fs4',0.25],['G4',0.25],
+  ['A4',0.25],['Bb4',0.25],['G4',0.25],['A4',0.25],['Bb4',0.25],['C5',0.25],['A4',0.25],['Bb4',0.25],
+  // descent to the fermata (m.56)
+  ['C5',0.25],['Bb4',0.25],['A4',0.25],['G4',0.25],['Fs4',0.25],['En4',0.25],['Fs4',0.25],['D4',0.25],
+  ['G4',0.5],['Fs4',0.5],['D4',1],
+  // "che in sen non ha pie-tà." — final phrase onto the held dominant (mm.57-58);
+  // the loop restart IS the Da Capo, falling back into the opening cascade
+  ['R',0.5],['A4',0.5],['Bb4',0.5],['A4',0.5],['Fs4',1.5],['G4',0.5],
+  ['G4',3],['R',1]
 ];
-// Basso continuo: two half notes per bar — i / V, with iv-V-i at the cadences (C minor).
+// Basso continuo: striding half notes, following the score's harmonic journey —
+// C minor (A section) → G-minor cadence (statement 2) → C-minor Fine →
+// B section through Db/F-minor colour to the held G dominant at the Da Capo.
 const BASS = [
+  // A section: ritornello / statement 1 / melisma / ritornello fragment
   ['C3',2],['G2',2],   ['C3',2],['G2',2],     // ritornello
   ['C3',2],['G2',2],   ['C3',2],['G2',2],     // Empio diro / togliti
   ['F3',2],['G2',2],                          // sei tutto crudelta
   ['C3',2],['G2',2],   ['G2',2],['C3',2],     // melisma / cadence
   ['C3',2],['G2',2],                          // ritornello fragment
-  ['C3',2],['G2',2],   ['C3',2],['G2',2],     // statement 2: Empio / togliti
-  ['F3',2],['G2',2],   ['G2',2],['C3',2]      // crudelta / final cadence
+  // statement 2 (mm.20-27): piano answer, then the turn to G minor
+  ['Ab3',2],['G3',2],  ['F3',2],['D3',2],     // empio diro ×2 (Ab6 / D6-nat colours)
+  ['Eb3',2],['C3',2],  ['D3',2],['G3',2],     // togliti / sei tutto crudelta
+  ['C3',2],['Eb3',2],  ['G3',2],['C3',2],     // melisma
+  ['C3',2],['D3',2],   ['G2',4],              // cadence in G minor
+  // closing ritornello cadence ("Fine")
+  ['C3',2],['G2',2],   ['C3',4],
+  // B section (mm.43-58)
+  ['C3',2],['Eb3',2],  ['Bb2',2],['Eb3',2],   // Non e da Re / donasi al rigor
+  ['F3',2],['C3',2],   ['Ab2',2],['Db3',2],   // non e da Re / donasi (Db colour)
+  ['Eb3',2],['C3',2],  ['F3',2],['Bb2',2],    // che in sen non ha pieta ×2
+  ['Eb3',2],['C3',2],  ['F3',2],['Bb2',2],    // melisma descent / ha pieta
+  ['G2',2],['G3',2],   ['G3',2],['D3',2],     // non e da Re (pivot) / donasi
+  ['D3',2],['G3',2],   ['C3',2],['D3',2],     // che in sen... (G minor)
+  ['C3',2],['D3',2],   ['G2',2],['D3',2],     // sequence / fermata (V of G)
+  ['D3',2],['D3',2],   ['G2',4]               // final phrase / held dominant → Da Capo
 ];
-function buildTrack(seq){ let t=0; const ev=[]; for(const [n,d] of seq){ ev.push({f:NF[n], t, d:d*MSPB}); t+=d*MSPB; } return {ev, len:t}; }
+function buildTrack(seq){ let t=0; const ev=[]; for(const [n,d] of seq){ if(n!=='R') ev.push({f:NF[n], t, d:d*MSPB}); t+=d*MSPB; } return {ev, len:t}; }
 const M_TRACK = buildTrack(MELODY), B_TRACK = buildTrack(BASS);
 const M_LOOP = Math.max(M_TRACK.len, B_TRACK.len);
 function musicNote(freq, start, dur, type, vol){
