@@ -992,11 +992,11 @@ const SCENES = [
   { type: 'title' },
   {
     bg: 'manor', speaker: '',
-    text: "Miss Cecilia Beverley, aged nineteen, has come into a fortune of TEN THOUSAND POUNDS, plus THREE THOUSAND POUNDS a year. But a strange condition was set upon the inheritance...",
+    text: "Miss Cecilia Beverley, aged twenty, has come into a fortune of TEN THOUSAND POUNDS, plus THREE THOUSAND POUNDS a year. But a strange condition was set upon the inheritance...",
   },
   {
     bg: 'manor', speaker: '',
-    text: "To keep her fortune, Cecilia must marry a gentleman willing to take HER family name. Otherwise, every penny reverts to her miserly relative, Mr. Eggleston!",
+    text: "To keep her fortune, Cecilia must marry a gentleman willing to take HER family name or remain single. Otherwise, every penny reverts to her miserly relative, Mr. Eggleston!",
   },
   {
     bg: 'london', speaker: '',
@@ -1010,7 +1010,6 @@ const SCENES = [
     choices: [
       { text: "'Sir, I shall choose with wisdom.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } },
       { text: "'Sir, I shall consult you on all matters.'", effect: (gs) => { gs.stats.gold += 1000; } },
-      { text: "'Sir, I am mistress of my own fate!'", effect: (gs) => { gs.stats.hearts += 0; } }
     ],
     onContinue: returnFromRoomDetour,
   },
@@ -1020,8 +1019,7 @@ const SCENES = [
     character: 'mrsdelvile',
     choices: [
       { text: "Greet Mortimer Delvile warmly.", effect: (gs) => { gs.suitors.delvile += 1; gs.stats.hearts += 1; clampHearts(gs); } },
-      { text: "Engage instead Mr. Monckton in conversation.", effect: (gs) => { gs.suitors.monckton += 1; gs.stats.virtue -= 1; clampVirtue(gs); } },
-      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
+      { text: "Thank her politely but keep distance.", effect: (gs) => { gs.stats.virtue -= 1; clampVirtue(gs); } }
     ],
     onContinue: returnFromRoomDetour,
   },
@@ -1041,7 +1039,6 @@ const SCENES = [
     character: 'delvile',
     choices: [
       { text: "'Mortimer, your honesty moves me deeply.'", effect: (gs) => { gs.suitors.delvile += 2; gs.stats.hearts += 1; clampHearts(gs); } },
-      { text: "'I am honored by your regard.'", effect: (gs) => { gs.suitors.delvile += 1; gs.stats.hearts += 1; clampHearts(gs); } },
       { text: "'Then we are at an impasse.'", effect: (gs) => { gs.stats.hearts -= 1; clampHearts(gs); } }
     ],
     onContinue: returnFromRoomDetour,
@@ -1061,7 +1058,7 @@ const SCENES = [
     text: "Sir Robert Floyer surveys you at his leisure, as a man appraises a horse at Tattersall's. 'So this is the heiress. You may account yourself fortunate, Miss Beverley - I have determined to have you.'",
     character: 'floyer',
     choices: [
-      { text: "Cast your eyes downward and blush, but do not leave the room.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
+      { text: "Cast your eyes downward, but do not leave.", effect: (gs) => { gs.suitors.floyer += 1; gs.flags.encouragedFloyer = true; gs.stats.virtue -= 1; clampVirtue(gs); } },
       { text: "Excuse yourself with barely concealed revulsion.", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } }
     ],
     onContinue: returnFromRoomDetour,
@@ -1071,7 +1068,7 @@ const SCENES = [
     text: "Mr. Arnott can scarcely meet your eye. 'I ask nothing, Miss Beverley - only that you should never want for a friend who... who esteems you.'",
     character: 'arnott',
     choices: [
-      { text: "'You are the truest friend I have, Mr. Arnott.'", effect: (gs) => { gs.suitors.arnott += 1; gs.flags.kindToArnott = true; } },
+      { text: "'I am touched by your regard.'", effect: (gs) => { gs.suitors.arnott += 1; gs.flags.kindToArnott = true; } },
       { text: "Thank him gently and turn away.", effect: (gs) => {} }
     ],
     onContinue: returnFromRoomDetour,
@@ -1099,7 +1096,7 @@ const SCENES = [
   },
   {
     bg: 'storm', speaker: '',
-    text: "Suddenly, scandal strikes! Wild rumors spread through London - tales of Cecilia's fortune, her family, her virtue! She must flee the city to escape the wagging tongues!",
+    text: "Mr. Harrel's demands for money grow ever louder! Cecilia must flee the Harrels and London to preserve her virtue and the rest of her fortune!",
     onContinue: () => { mgReturnIdx = currentSceneIdx + 1; state = 'minigame'; initMinigame(); }
   },
   { // index after minigame (mgReturnIdx): Mrs. Delvile confrontation (name condition)
@@ -1134,7 +1131,7 @@ const SCENES = [
   },
   { // Stage gate: breaking-point -> chase, else -> wish menu. Routes on continue.
     bg: 'storm', speaker: '',
-    text: "Cecilia returns to London, her heart and fortune alike in peril...",
+    text: "Mr. Eggleston demands Cecilia's property, and she flees to London, in pursuit of Mortimer Delvile...",
     onContinue: () => {
       chaseReturnIdx = currentSceneIdx + 1;   // the wish menu
       state = 'chase'; initChase();
