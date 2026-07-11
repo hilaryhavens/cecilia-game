@@ -1596,7 +1596,7 @@ const ROOM_NPCS = [
 ];
 function nearNpc() {
   for (const n of ROOM_NPCS)
-    if (Math.abs(room.px - n.x) < 48 && Math.abs(room.py - n.y) < 40) return n;
+    if (Math.abs(room.px - n.x) < 64 && Math.abs(room.py - n.y) < 48) return n;
   return null;
 }
 // Scenes 4-11 end here instead of advancing the linear story.
@@ -1661,8 +1661,8 @@ function updateRoom() {
   room.moving = !!(dx || dy);
   // block walking through people
   const bump = nearNpc();
-  if (bump && Math.abs(room.px - bump.x) < 30 && Math.abs(room.py - bump.y) < 24) {
-    room.px = room.px < bump.x ? bump.x - 30 : bump.x + 30;
+  if (bump && Math.abs(room.px - bump.x) < 45 && Math.abs(room.py - bump.y) < 30) {
+    room.px = room.px < bump.x ? bump.x - 45 : bump.x + 45;
   }
   if (keyPressed('Space') || keyPressed('Enter')) {
     const atDoor = room.doorOpen && room.px > 345 && room.px < 455 && room.py < 330;
@@ -1693,12 +1693,12 @@ function drawRoom() {
   for (const f of figures) {
     if (f.cecilia) {
       const bob = room.moving ? Math.sin(frame * 0.3) : 0;
-      drawSprite(SP.ceciliaWalk, room.px - 24, room.py - 64 + bob, 2, C, true);
+      drawSprite(SP.ceciliaWalk, room.px - 36, room.py - 96 + bob, 3, C, true);
     } else {
       const n = f.n, spr = SP[n.key];
-      drawSprite(spr, n.x - 24, n.y - spr.length * 2, 2, C, true);
+      drawSprite(spr, n.x - 36, n.y - spr.length * 3, 3, C, true);
       if (!room.met[n.key]) {             // bobbing "!" over the not-yet-met
-        const my = n.y - spr.length * 2 - 20 + Math.sin(frame * 0.1) * 3;
+        const my = n.y - spr.length * 3 - 20 + Math.sin(frame * 0.1) * 3;
         drawText('!', n.x - 4, my, C.r, 2, 'left');
       }
     }
