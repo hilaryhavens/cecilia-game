@@ -926,7 +926,6 @@ let textTimer = 0;
 let choiceIdx = 0;
 let currentScene = null;
 let currentEndingType = null;
-let mgReturnIdx = 0;
 let chaseReturnIdx = 0;   // scene index to resume at (the wish menu) after surviving the chase
 let choiceStartY = 0;   // y where the choice list begins (set by drawDialogue so choices never overlap the spoken line)
 
@@ -1137,10 +1136,10 @@ const SCENES = [
   {
     bg: 'storm', speaker: '',
     text: "Suddenly, scandal strikes! Wild rumors spread through London - tales of Cecilia's fortune, her family, her virtue! She must flee the city to escape the wagging tongues!",
-    onContinue: () => { mgReturnIdx = currentSceneIdx + 1; state = 'minigame'; initMinigame(); }
+    onContinue: () => { state = 'minigame'; initMinigame(); }
   },
-  { // index after minigame (mgReturnIdx): Mrs. Delvile confrontation (name condition)
-    bg: 'ballroom', speaker: 'MRS. DELVILE',
+  { // Castle-room detour: Mrs. Delvile confrontation (name condition)
+    bg: 'castlehall', speaker: 'MRS. DELVILE',
     text: (gs) => gs.suitors.delvile >= 2
       ? "'Miss Beverley, my son loves you. But the name of Delvile must never die. Could you ask him to bury it?'"
       : "'Miss Beverley. I will be plain. There can be no union that costs my family its name.'",
@@ -1148,26 +1147,44 @@ const SCENES = [
     choices: [
       { text: "'I would never ask him to dishonour his name.'", effect: (gs) => { gs.flags.mrsDelvileApproval = true; gs.stats.hearts += 1; clampHearts(gs); } },
       { text: "'Then your son must choose between us.'", effect: (gs) => { gs.flags.mrsDelvileApproval = false; gs.stats.hearts -= 1; clampHearts(gs); } }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
   { // Elder Mr. Delvile asserts the family's name-pride
-    bg: 'manor', speaker: 'MR. DELVILE',
+    bg: 'castle', speaker: 'MR. DELVILE',
     text: "'Miss Beverley. The name of Delvile has descended unsullied for centuries. I will not see it bartered, nor bent to suit a fortune - however large. You will understand a father's duty.'",
     character: 'elderdelvile',
     choices: [
       { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => {} },
       { text: "'A name is not worth a son's happiness.'", effect: (gs) => {} }
-    ]
+    ],
+    onContinue: returnFromRoomDetour,
   },
-  { // Mortimer's private confession
-    bg: 'garden', speaker: 'MORTIMER DELVILE',
-    text: "'Cecilia - marry me in secret. Let no name, no fortune, no mother stand between us. Only say yes.'",
+  { // Mortimer's private confession (proposal if courted, else a guarded confidence)
+    bg: 'stormwood', speaker: 'MORTIMER DELVILE',
+    text: (gs) => gs.suitors.delvile >= 1
+      ? "'Cecilia - marry me in secret. Let no name, no fortune, no mother stand between us. Only say yes.'"
+      : "'Miss Beverley - I hardly know what I would say. Only that your presence is the sole comfort this castle affords me.'",
     character: 'delvile',
-    condition: (gs) => gs.suitors.delvile >= 1,
     choices: [
-      { text: "'Yes. I will be yours, whatever the cost.'", effect: (gs) => { gs.flags.agreedSecretMarriage = true; gs.stats.hearts += 1; clampHearts(gs); } },
-      { text: "'Not in secret. I will not begin in shame.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); gs.stats.hearts -= 1; clampHearts(gs); } }
-    ]
+      { text: "'Yes. I will be yours, whatever the cost.'", condition: (gs) => gs.suitors.delvile >= 1,
+        effect: (gs) => { gs.flags.agreedSecretMarriage = true; gs.stats.hearts += 1; clampHearts(gs); } },
+      { text: "'Not in secret. I will not begin in shame.'", condition: (gs) => gs.suitors.delvile >= 1,
+        effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); gs.stats.hearts -= 1; clampHearts(gs); } },
+      { text: "'We are friends, Mr. Delvile. Let that content us.'", condition: (gs) => gs.suitors.delvile < 1, effect: (gs) => {} },
+      { text: "'Your family watches us, sir. I must go.'", condition: (gs) => gs.suitors.delvile < 1, effect: (gs) => {} }
+    ],
+    onContinue: returnFromRoomDetour,
+  },
+  { // Lady Honoria Pemberton - the Delviles' lively young cousin (castle room detour)
+    bg: 'castlehall', speaker: 'LADY HONORIA',
+    text: "'Delvile Castle is a frightfully dull place, even with you around!'",
+    character: 'honoria',
+    choices: [
+      { text: "'You should honour our hosts.'", effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); } },
+      { text: "'I also long for London.'", effect: (gs) => { gs.stats.virtue -= 1; clampVirtue(gs); } }
+    ],
+    onContinue: returnFromRoomDetour,
   },
   { // Stage gate: breaking-point -> chase, else -> wish menu. Routes on continue.
     bg: 'storm', speaker: '',
@@ -1641,10 +1658,22 @@ const GEORGIAN_NPCS = [
   { key: 'albany',     name: 'OLD ALBANY',        sceneIdx: 11, x: 280, y: 560,
     line: "Still here, among the gilded and the idle? Go forth! The poor wait upon your bounty, and time waits upon no one." }
 ];
+// The Delvile Castle household, about the great hall after the charity minigame.
+const DELVILE_NPCS = [
+  { key: 'elderdelvile', name: 'MR. DELVILE',       sceneIdx: 15, x: 215, y: 335,
+    line: "The Delviles have held this seat for centuries unbroken. Few families, Miss Beverley, may say as much." },
+  { key: 'mrsdelvile',   name: 'MRS. DELVILE',      sceneIdx: 14, x: 585, y: 335,
+    line: "You have a nobleness of mind, Miss Beverley, I had scarce hoped to find in this age." },
+  { key: 'honoria',      name: 'LADY HONORIA',      sceneIdx: 17, x: 140, y: 495,
+    line: "I mean to take the phaeton out the instant it clears - say you will come, or I shall perish of dullness!" },
+  { key: 'delvile',      name: 'MORTIMER DELVILE',  sceneIdx: 16, x: 660, y: 495,
+    line: "My mother esteems you; my father suspects; and I - I am wholly yours, whatever I appear." }
+];
 // Each walkable hub room: background case name, its cast, and where the linear
 // story resumes when the player departs through the opened door.
 const ROOMS = {
-  georgian: { bg: 'room', npcs: GEORGIAN_NPCS, resumeIdx: 12 }
+  georgian: { bg: 'room', npcs: GEORGIAN_NPCS, resumeIdx: 12 },
+  castle:   { bg: 'castlehall', npcs: DELVILE_NPCS, resumeIdx: 18 }
 };
 function nearNpc() {
   for (const n of room.cfg.npcs)
@@ -2873,9 +2902,8 @@ function update() {
     updateMinigame();
     if (mg.finished) {
       if (keyPressed('Space') || keyPressed('Enter')) {
-        state = 'scene';
-        currentSceneIdx = mgReturnIdx;
-        setupScene();
+        state = 'room';               // into Delvile Castle - the walkable hall
+        initRoom('castle');
       }
     }
   } else if (state === 'chase') {
