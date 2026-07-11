@@ -2396,10 +2396,41 @@ function drawMinigame() {
   const px = Math.floor(mg.player.x);
   const py = Math.floor(mg.player.y);
   drawSprite(SP.ceciliaWalk, px, py + 4 + (mg.player.onGround && Math.abs(mg.player.vx) > 0.5 ? Math.sin(mg.levelTime * 0.3) : 0), 2, C, true);
-  // End marker
-  fillRect(mg.endX, 200, 6, 210, C.L);
-  fillRect(mg.endX + 6, 210, 60, 40, C.v);
-  drawText('HOME', mg.endX + 10, 220, C.w, 1, 'left', false);
+  // End marker: Delvile Castle — stone towers behind a moat, drawbridge down to meet her
+  const cX = mg.endX;
+  // moat (water in front of the walls) and far bank
+  fillRect(cX - 6, 410, 226, 36, C.Z);
+  fillRect(cX - 6, 410, 226, 5, C.l);
+  fillRect(cX + 40, 434, 150, 3, C.l);
+  fillRect(cX + 220, 410, 50, 36, C.q);
+  // corner towers (behind the main wall line)
+  fillRect(cX + 24, 214, 36, 196, C.o);
+  fillRect(cX + 180, 214, 36, 196, C.o);
+  for (let i = 0; i < 2; i++) {                                   // tower crenellations
+    const tx = i === 0 ? cX + 24 : cX + 180;
+    fillRect(tx, 202, 10, 12, C.o); fillRect(tx + 13, 202, 10, 12, C.o); fillRect(tx + 26, 202, 10, 12, C.o);
+    fillRect(tx + 12, 250, 8, 20, C.k);                           // arrow slit
+    fillRect(tx + 12, 300, 8, 20, C.k);
+  }
+  // main wall between the towers
+  fillRect(cX + 56, 262, 128, 148, C.o);
+  fillRect(cX + 56, 262, 128, 5, C['+']);
+  for (let i = 0; i < 5; i++) fillRect(cX + 58 + i * 26, 250, 14, 12, C.o);  // wall crenellations
+  fillRect(cX + 70, 290, 10, 16, C.k); fillRect(cX + 160, 290, 10, 16, C.k); // windows
+  // gatehouse with the arched gate
+  fillRect(cX + 94, 296, 52, 114, C.u);
+  fillRect(cX + 104, 330, 32, 80, C.k);                           // gate opening
+  fillRect(cX + 108, 322, 24, 8, C.k);                            // arch
+  for (let i = 0; i < 3; i++) fillRect(cX + 106 + i * 11, 330, 3, 34, C.L);  // raised portcullis
+  // drawbridge down across the moat, its foot at the finish line
+  fillRect(cX - 6, 406, 116, 10, C.t);
+  fillRect(cX - 6, 406, 116, 2, C.L);
+  fillRect(cX + 24, 406, 3, 10, C.a); fillRect(cX + 60, 406, 3, 10, C.a);    // plank joins
+  for (let i = 0; i < 8; i++) fillRect(cX + i * 12, 400 - i * 11, 4, 5, C['+']); // chain: bridge tip up to the gatehouse
+  // name plaque
+  fillRect(cX + 14, 168, 212, 26, C.k);
+  fillRect(cX + 14, 168, 212, 3, C.w);
+  drawText('DELVILE CASTLE', cX + 120, 176, C.w, 1, 'center', false);
   ctx.restore();
   // UI: virtue + gold
   drawText('VIRTUE', 20, 60, C.h, 1, 'left', false);
@@ -2664,7 +2695,7 @@ function draw() {
     if (mg.finished) {
       ctx.fillStyle = 'rgba(0,0,0,0.75)';
       ctx.fillRect(0, 0, W, H);
-      drawText('YOU REACH HOME', W/2, 220, C.g, 3, 'center');
+      drawText('YOU REACH DELVILE CASTLE', W/2, 220, C.g, 3, 'center');
       drawText('Press SPACE to continue', W/2, 320, C.w, 2, 'center');
     }
   } else if (state === 'chase') {
