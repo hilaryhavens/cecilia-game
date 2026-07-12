@@ -1176,7 +1176,7 @@ const ENDINGS = {
   },
   madhouse: {
     title: "THE MADHOUSE",
-    text: "Raving and unknown, Cecilia is carried to a private madhouse and locked among strangers. No friend with power to free her comes in time, and the world that courted her fortune lets her name dissolve into the ward's anonymous dark.\n\nA warning, Burney tells us, of what society does to an unguarded heart.\n\nTHE END",
+    text: "Nameless and raving, Cecilia is shut in a bare room above a shop, advertised in the papers as a wandering madwoman. No Delvile comes; no friend claims her. The fortune that drew all London cannot now buy her own name back.\n\nTHE END",
     bg: 'storm'
   },
   loveless: {
@@ -2743,7 +2743,7 @@ function updateChase() {
       if (chase.caught) flags.caughtDelvile = true;
       chase.outcome = resolveEnding(chase.caught, gameState());   // an ENDINGS key
       chase.mad = (chase.outcome === 'madhouse');                 // drives the DECLARED MAD banner
-      playSound(chase.caught ? 'victory' : 'hurt');
+      playSound(!chase.mad && chase.caught ? 'victory' : 'hurt');
     }
   }
 }
@@ -2935,8 +2935,8 @@ function draw() {
     drawChase();
     if (chase.finished) {
       ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0, 0, W, H);
-      const banner = chase.caught ? 'YOU REACH HIM' : (chase.mad ? 'DECLARED MAD' : 'HE IS LOST TO YOU');
-      const bcol = chase.caught ? C.g : (chase.mad ? C.F : C.x);
+      const banner = chase.mad ? 'DECLARED MAD' : (chase.caught ? 'YOU REACH HIM' : 'HE IS LOST TO YOU');
+      const bcol = chase.mad ? C.F : (chase.caught ? C.g : C.x);
       drawText(banner, W/2, 230, bcol, 3, 'center');
       drawText('Press SPACE', W/2, 320, C.w, 2, 'center');
     }
