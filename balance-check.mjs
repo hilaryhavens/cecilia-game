@@ -43,8 +43,10 @@ if (!C || typeof C.resolveEnding !== 'function') {
 //    (in real play every NPC room detour is mandatory, so all menus are seen).
 //  - Charity minigame: 4 worthy targets (~£25) and 3 spendthrifts (£1000-2500),
 //    each given to with p=0.5 (mirrors initMinigame's target list).
-//  - Chase: P(caught) maps chaseDifficulty's ~[0.5,3] range linearly onto
-//    [0.05,0.95] — same shape the game's steering/mash difficulty follows.
+//  - Maze chase (item 18): random pellet pickups (0-3 hearts, 0-8 coins), then
+//    an outcome roll — P(reached) follows chaseDifficulty (love & promises make
+//    Delvile linger, so he's easier to corner); the shopkeeper seizes her at a
+//    flat rate; the remainder collapse to the delirium timer.
 function simulate() {
   const gs = C.blankGS();
   for (const sc of C.SCENES) {
@@ -56,8 +58,15 @@ function simulate() {
   }
   for (let i = 0; i < 4; i++) if (Math.random() < 0.5) C.applyGift(gs, 'worthy', 25);
   for (let i = 0; i < 3; i++) if (Math.random() < 0.5) C.applyGift(gs, 'unworthy', 1000 + Math.floor(Math.random() * 4) * 500);
-  const p = Math.min(0.95, Math.max(0.05, (C.chaseDifficulty(gs) - 0.5) / 2.5));
-  return C.resolveEnding(Math.random() < p, gs);
+  gs.stats.hearts += Math.floor(Math.random() * 4);            // 0-3 maze hearts
+  C.clampHearts(gs);
+  gs.stats.gold += 250 * Math.floor(Math.random() * 9);        // 0-8 maze coins
+  const diff = C.chaseDifficulty(gs);
+  const pReach = Math.min(0.85, Math.max(0.15, (diff - 0.5) / 2.5 * 0.7 + 0.15));
+  const pCaught = 0.20;                                        // the shopkeeper seizes her
+  const roll = Math.random();
+  const result = roll < pReach ? 'reached' : roll < pReach + pCaught ? 'caught' : 'collapsed';
+  return C.resolveMazeOutcome(result, gs);
 }
 
 const runs = Number(process.argv[2] || 5000);
