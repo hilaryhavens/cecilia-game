@@ -981,6 +981,14 @@ function resolveEnding(caught, gs) {
   if (s.gold >= 7500 && s.virtue >= 4) return 'single_rich';
   return 'loveless';
 }
+// Maze-chase outcome -> ENDINGS key (spec: docs/superpowers/specs/2026-07-12-pacman-chase-design.md).
+// result: 'reached' (she corners Delvile) | 'caught' (the shopkeeper seizes her) | 'collapsed' (delirium timer).
+// Seized by the shopkeeper, only a full heart saves her from committal.
+function resolveMazeOutcome(result, gs) {
+  if (result === 'reached')   return resolveEnding(true, gs);
+  if (result === 'collapsed') return resolveEnding(false, gs);
+  return gs.stats.hearts >= 5 ? 'delvile' : 'madhouse';
+}
 // Who takes the Beverley name in the loveless ending.
 function lovelessHusband(gs) {
   return (gs.flags.kindToArnott || gs.suitors.arnott >= 2) ? 'Mr. Arnott' : 'Mr. Monckton';
@@ -2985,7 +2993,7 @@ function gameLoop() {
 // === TEST SEAM: pure logic + a live-state view for browser-driven tests ===
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
-  blankGS, applyGift, resolveEnding, lovelessHusband, chaseDifficulty,
+  blankGS, applyGift, resolveEnding, resolveMazeOutcome, lovelessHusband, chaseDifficulty,
   resolveSceneText, visibleChoices, gameState, SCENES, clampVirtue, clampHearts,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
