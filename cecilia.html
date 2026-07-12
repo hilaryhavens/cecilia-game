@@ -2721,73 +2721,122 @@ function mazeWall(c, r) {
 }
 function tileCX(c) { return c * TILE + TILE / 2; }
 function tileCY(r) { return MAZE_Y + r * TILE + TILE / 2; }
+const DIRS = { up: {dx:0,dy:-1}, down: {dx:0,dy:1}, left: {dx:-1,dy:0}, right: {dx:1,dy:0} };
+const OPP  = { up: 'down', down: 'up', left: 'right', right: 'left' };
+function makeActor(sp, dir) {
+  return { x: tileCX(sp.c), y: tileCY(sp.r), c: sp.c, r: sp.r, tc: sp.c, tr: sp.r, dir };
+}
 function initChase() {
-  const diff = chaseDifficulty(gameState());
+  const { pellets, spawns } = parseMaze();
   chase = {
-    phase: 1,                 // 1 = carriage, 2 = foot
-    t: 0,
-    laneY: 300,               // Cecilia's carriage vertical position
-    vy: 0,                    // vertical velocity (momentum steering)
-    gap: 520,                 // distance to Delvile's carriage; smaller = closer (longer chase)
-    obstacles: [],
-    nextObs: 60,
-    reach: 0,                 // phase 2: progress toward Delvile (0..100)
-    overtaken: 0,             // phase 2: pursuers closing (0..100)
-    diff,                     // catchability factor
-    finished: false,
-    caught: false,
-    mad: false,
-    outcome: null
+    t: 0, intro: true, boost: 0, pellets,
+    diff: chaseDifficulty(gameState()),
+    cecilia:    makeActor(spawns.P, 'right'),
+    delvile:    Object.assign(makeActor(spawns.D, 'left'), { pause: 0 }),
+    shopkeeper: makeActor(spawns.S, 'left'),
+    want: null,
+    finished: false, caught: false, mad: false, result: null, outcome: null
   };
+  for (const k in keys) if (k.endsWith('_p')) keys[k] = false;  // a stray press must not pre-dismiss the intro banner
+}
+function openDirs(c, r) { return Object.keys(DIRS).filter(d => !mazeWall(c + DIRS[d].dx, r + DIRS[d].dy)); }
+// Target-tile movement: walk toward the target tile centre; on arrival snap,
+// ask chooseDir for the next direction (null = stand still). Handles any speed
+// without drifting off the grid.
+function stepActor(a, speed, chooseDir) {
+  let remaining = speed;
+  while (remaining > 0) {
+    const tx = tileCX(a.tc), ty = tileCY(a.tr);
+    const dist = Math.abs(tx - a.x) + Math.abs(ty - a.y);
+    if (dist > remaining) {
+      a.x += Math.sign(tx - a.x) * remaining;
+      a.y += Math.sign(ty - a.y) * remaining;
+      return;
+    }
+    a.x = tx; a.y = ty; a.c = a.tc; a.r = a.tr;
+    remaining -= dist;
+    const d = chooseDir(a);
+    if (!d || mazeWall(a.c + DIRS[d].dx, a.r + DIRS[d].dy)) return;
+    a.dir = d; a.tc = a.c + DIRS[d].dx; a.tr = a.r + DIRS[d].dy;
+  }
+}
+// Pick the non-reversing open direction that minimizes (or maximizes) distance to (tx,ty).
+function huntDir(a, tx, ty, minimize) {
+  let opts = openDirs(a.c, a.r).filter(d => d !== OPP[a.dir]);
+  if (!opts.length) opts = [OPP[a.dir]];
+  let best = opts[0], bestScore = null;
+  for (const d of opts) {
+    const ddx = tileCX(a.c + DIRS[d].dx) - tx, ddy = tileCY(a.r + DIRS[d].dy) - ty;
+    const s = ddx * ddx + ddy * ddy;
+    if (bestScore === null || (minimize ? s < bestScore : s > bestScore)) { best = d; bestScore = s; }
+  }
+  return best;
+}
+function aboutFace(a) { [a.c, a.tc] = [a.tc, a.c]; [a.r, a.tr] = [a.tr, a.r]; a.dir = OPP[a.dir]; }
+function updateCecilia() {
+  const cc = chase.cecilia;
+  if (keys['ArrowUp'] || keys['KeyW']) chase.want = 'up';
+  else if (keys['ArrowDown'] || keys['KeyS']) chase.want = 'down';
+  else if (keys['ArrowLeft'] || keys['KeyA']) chase.want = 'left';
+  else if (keys['ArrowRight'] || keys['KeyD']) chase.want = 'right';
+  // instant about-face mid-corridor, like Pac-Man
+  if (chase.want === OPP[cc.dir] && (cc.tc !== cc.c || cc.tr !== cc.r)) aboutFace(cc);
+  stepActor(cc, chase.boost > 0 ? 3.75 : 2.5, a => {
+    if (chase.want && !mazeWall(a.c + DIRS[chase.want].dx, a.r + DIRS[chase.want].dy)) return chase.want;
+    if (!mazeWall(a.c + DIRS[a.dir].dx, a.r + DIRS[a.dir].dy)) return a.dir;
+    return null;
+  });
+}
+function updateDelvile() {
+  const dv = chase.delvile, cc = chase.cecilia;
+  if (dv.pause > 0) { dv.pause--; return; }
+  stepActor(dv, 2.1, a => {
+    // love and promises make him linger at corners (chaseDifficulty preserved from the old chase)
+    if (Math.random() < Math.min(0.30, 0.05 + 0.07 * chase.diff) / 4) { dv.pause = 45; return null; }
+    if (Math.random() < 0.6) return huntDir(a, cc.x, cc.y, false);   // slip away from her
+    const opts = openDirs(a.c, a.r).filter(d => d !== OPP[a.dir]);
+    return opts.length ? opts[Math.floor(Math.random() * opts.length)] : OPP[a.dir];
+  });
+}
+function updateShopkeeper() {
+  const sk = chase.shopkeeper, cc = chase.cecilia;
+  stepActor(sk, chase.boost > 0 ? 1.8 : 2.3, a => huntDir(a, cc.x, cc.y, chase.boost <= 0));
+}
+function finishChase(result) {
+  chase.result = result;
+  chase.finished = true;
+  chase.caught = (result === 'reached');
+  if (chase.caught) flags.caughtDelvile = true;
+  chase.outcome = resolveMazeOutcome(result, gameState());   // an ENDINGS key
+  chase.mad = (chase.outcome === 'madhouse');                // drives the DECLARED MAD banner
+  playSound(!chase.mad && chase.caught ? 'victory' : 'hurt');
 }
 function updateChase() {
+  if (chase.intro) {                                          // instruction banner: dismissed by a FRESH key press
+    for (const k in keys) if (k.endsWith('_p') && keys[k]) { chase.intro = false; break; }
+    if (!chase.intro) {
+      keys['ArrowUp_p'] = keys['ArrowDown_p'] = keys['ArrowLeft_p'] = keys['ArrowRight_p'] = false;
+      keys['KeyW_p'] = keys['KeyA_p'] = keys['KeyS_p'] = keys['KeyD_p'] = false;
+      keys['Space_p'] = keys['Enter_p'] = false;
+    }
+    return;
+  }
   if (chase.finished) return;
   chase.t++;
-  if (chase.phase === 1) {
-    // Steer up/down to dodge. Momentum model: the carriage has weight — it accelerates
-    // into a turn and coasts to a stop, so steering feels responsive but not twitchy.
-    const ACCEL = 8, MAXV = 10, FRICTION = 0.55;
-    let dir = 0;
-    if (keys['ArrowUp'] || keys['KeyW']) dir -= 1;
-    if (keys['ArrowDown'] || keys['KeyS']) dir += 1;
-    if (dir !== 0) chase.vy += ACCEL * dir;
-    chase.vy *= FRICTION;                                       // damping: coasts to rest, caps top speed
-    chase.vy = Math.max(-MAXV, Math.min(MAXV, chase.vy));
-    chase.laneY += chase.vy;
-    if (chase.laneY <= 100) { chase.laneY = 100; chase.vy = 0; } // hit a rail: kill momentum
-    if (chase.laneY >= 480) { chase.laneY = 480; chase.vy = 0; } // wider playable lane
-    // Spawn obstacles (a touch sparser and slower, so the road stays readable)
-    if (--chase.nextObs <= 0) {
-      chase.obstacles.push({ x: W + 20, y: 100 + Math.random() * 380, w: 40, h: 40, hit: false });
-      chase.nextObs = 55 + Math.random() * 45;
-    }
-    for (const o of chase.obstacles) {
-      o.x -= 5;
-      if (!o.hit && o.x < 90 && o.x + o.w > 40 && Math.abs(o.y - chase.laneY) < 34) {
-        o.hit = true; chase.gap += 40; chase.shakeUntil = chase.t + 18; playSound('hurt');   // crash widens the gap
-      }
-    }
-    chase.obstacles = chase.obstacles.filter(o => o.x > -50);
-    // Clean driving slowly closes the gap; lingering scales with diff.
-    chase.gap -= 0.5 * chase.diff;
-    if (chase.gap <= 0) { chase.phase = 2; playSound('select'); }     // caught up -> foot chase
-    if (chase.t > 60 * 45) { chase.phase = 2; }                       // safety: cap phase 1 at ~45s
-  } else {
-    // Phase 2: mash Right/Space to reach him before the crowd overtakes her.
-    chase.p2t = (chase.p2t || 0) + 1;
-    if (keyPressed('ArrowRight') || keyPressed('Space') || keyPressed('KeyD')) chase.reach += 3;
-    chase.reach += 0.25 * (chase.diff - 0.8);            // love makes him linger within reach
-    if (chase.p2t > 90) chase.overtaken += 0.28;         // pursuers close in — after a moment to read the rules
-    chase.reach = Math.max(0, chase.reach);
-    if (chase.reach >= 100) { chase.caught = true; chase.finished = true; }
-    else if (chase.overtaken >= 100) { chase.caught = false; chase.finished = true; }
-    if (chase.finished) {
-      if (chase.caught) flags.caughtDelvile = true;
-      chase.outcome = resolveEnding(chase.caught, gameState());   // an ENDINGS key
-      chase.mad = (chase.outcome === 'madhouse');                 // drives the DECLARED MAD banner
-      playSound(!chase.mad && chase.caught ? 'victory' : 'hurt');
-    }
+  if (chase.boost > 0) chase.boost--;
+  updateCecilia(); updateDelvile(); updateShopkeeper();
+  const cc = chase.cecilia;
+  for (const p of chase.pellets) {                            // pellet pickups feed the live stats
+    if (p.taken || Math.abs(tileCX(p.c) - cc.x) >= 20 || Math.abs(tileCY(p.r) - cc.y) >= 20) continue;
+    p.taken = true; playSound('select');
+    if (p.kind === 'h') { stats.hearts += 1; clampHearts(gameState()); }
+    else if (p.kind === 'c') { stats.gold += 250; }
+    else { chase.boost = 300; aboutFace(chase.shopkeeper); }  // power pellet: speed + the shopkeeper flees
   }
+  const near = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < 24 * 24;
+  if (near(cc, chase.delvile)) finishChase('reached');
+  else if (chase.boost <= 0 && near(cc, chase.shopkeeper)) finishChase('caught');
+  else if (chase.t >= 5400) finishChase('collapsed');         // 90s delirium timer
 }
 function chaseResultEnding() { return chase ? chase.outcome : null; }
 // --- chase art helpers (resolution-relative) ---
@@ -3031,6 +3080,8 @@ window.Cecilia = {
   resolveSceneText, visibleChoices, gameState, SCENES, clampVirtue, clampHearts,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
+  startChase() { state = 'chase'; initChase(); },
+  get chaseState() { return chase; },
   endingKeys: Object.keys(ENDINGS),
   get live() { return { stats, suitors, flags, state, currentSceneIdx }; }
 };
