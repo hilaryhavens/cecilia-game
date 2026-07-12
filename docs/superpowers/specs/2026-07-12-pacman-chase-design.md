@@ -128,8 +128,8 @@ function resolveMazeOutcome(result, gs) {
 ## As-built deviations (2026-07-12)
 
 - Delvile rides visibly atop his carriage (Hilary's mid-build request); the cab
-  is his coat-blue (`C.B`) with a dark outline so the moving goal reads against
-  the dark road.
+  is bright red (`C.E`) with a dark outline so the moving goal reads against
+  both the dark road and his blue coat.
 - Delvile's per-intersection pause probability is divided by 4 in code — the
   movement engine re-rolls roughly every tile, so the divisor restores the
   spec's intended per-intersection rate.
