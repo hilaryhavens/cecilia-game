@@ -376,7 +376,7 @@ git -C C:\Users\hhavens1\cecilia commit -m "feat: final-reckoning stats panel on
 - Consumes: `window.Cecilia` seam (`blankGS`, `SCENES`, `visibleChoices`, `applyGift`, `chaseDifficulty`, `resolveEnding`).
 - Produces: `node balance-check.mjs [runs]` printing the 4-ending distribution and PASS/FAIL against the targets; exit code 1 on FAIL.
 
-- [ ] **Step 1: Write `balance-check.mjs`:**
+- [x] **Step 1: Write `balance-check.mjs`:**
 
 ```js
 // Monte-Carlo ending-balance check for cecilia.html (item 14).
@@ -452,18 +452,18 @@ console.log(ok ? 'PASS (madhouse <= 30%, all endings >= 10%)' : 'FAIL');
 process.exit(ok ? 0 : 1);
 ```
 
-- [ ] **Step 2: Run it:** `node C:\Users\hhavens1\cecilia\balance-check.mjs`. First hurdle is the sandbox loading cleanly. If `vm.runInContext` throws, the error names the missing global — add it to `sandbox` as `proxy` (or a no-op) and re-run; iterate until the seam loads. Do NOT edit `cecilia.html` to accommodate the harness.
+- [x] **Step 2: Run it:** `node C:\Users\hhavens1\cecilia\balance-check.mjs`. First hurdle is the sandbox loading cleanly. If `vm.runInContext` throws, the error names the missing global — add it to `sandbox` as `proxy` (or a no-op) and re-run; iterate until the seam loads. Do NOT edit `cecilia.html` to accommodate the harness.
 
-- [ ] **Step 3: Judge the distribution.** Expected: PASS. If out of band, tune ONLY `resolveEnding` numbers, in this preference order, re-running after each change:
+- [x] **Step 3: Judge the distribution.** Expected: PASS. If out of band, tune ONLY `resolveEnding` numbers, in this preference order, re-running after each change:
   - `madhouse` > 30 % → soften the uncaught collapse line (e.g. `4500` → `4000`, or `virtue <= 3` → `<= 2`).
   - `delvile` < 10 % → lower the caught love bar 3 → 2 (keep uncaught at 5).
   - `single_rich` < 10 % → lower its gold floor `7500` → `7000`.
   - `loveless` < 10 % → raise `single_rich`'s floor back up or tighten the delvile bar.
   Then update the same numbers in the spec's Resolution-logic section and in this plan's Global Constraints so all three stay in agreement, and note the change in the commit message.
 
-- [ ] **Step 4: Record the passing distribution** — paste the final percentages into a `## Balance results (YYYY-MM-DD)` section appended to this plan file.
+- [x] **Step 4: Record the passing distribution** — paste the final percentages into a `## Balance results (YYYY-MM-DD)` section appended to this plan file.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git -C C:\Users\hhavens1\cecilia add balance-check.mjs cecilia.html docs/
@@ -497,3 +497,16 @@ git -C C:\Users\hhavens1\cecilia commit -m "feat: Monte-Carlo balance harness; d
 - **Spec coverage:** resolver grid + delirium rescue (Task 1); four flat endings + dynamic loveless husband (Task 2); wish-menu/old-resolver removals + declared-mad routing (Task 3); prominent final-stats panel (Task 4); Node Monte-Carlo harness, targets, tuning rule (Task 5); Playwright grid/e2e tests + both chase outcomes (Tasks 1–3, 6). Covered.
 - **Type consistency:** `resolveEnding(caught, gs)` and the four ending keys are identical across Tasks 1, 2, 3, 5; `chase.outcome` holds an ending key from Task 3 onward and `chaseResultEnding` still reads it; `lovelessHusband` returns the exact strings asserted in Task 1 and rendered in Task 2.
 - **Known mid-branch break:** between Tasks 2 and 3 the wish menu still calls `resolveWish` on deleted ending keys — documented in Task 2's Interfaces; Tasks 2 and 3 must land in the same session.
+
+## Balance results (2026-07-12)
+
+`node balance-check.mjs 5000`, run twice; no threshold tuning was needed — the first run was already in band:
+
+| ending      | run 1 | run 2 |
+|-------------|-------|-------|
+| single_rich | 26.2% | 25.6% |
+| delvile     | 11.2% | 12.6% |
+| madhouse    | 21.4% | 21.5% |
+| loveless    | 41.1% | 40.3% |
+
+Both runs PASS (madhouse ≤ 30%, all endings ≥ 10%); per-ending percentages agree within ~2 points between runs, consistent with expected Monte-Carlo variance at 5000 runs. `resolveEnding` thresholds are unchanged from Task 1 (love: `hearts >= 3` caught / `>= 5` uncaught; collapse: `virtue <= 2 || gold <= 3000` caught / `virtue <= 3 || gold <= 4500` uncaught; single_rich: `gold >= 7500 && virtue >= 4`).
