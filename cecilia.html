@@ -1221,50 +1221,25 @@ const SCENES = [
 ];
 
 const ENDINGS = {
-  survival: {
-    title: "SHE LIVES",
-    text: "The fever breaks. Mortimer is at her side; Mrs. Delvile, softened at last, gives her blessing. They marry - poorer, plainer, but together. The Beverley fortune is gone to the name condition, yet Cecilia wakes to a quiet, living happiness.\n\nTHE END",
+  single_rich: {
+    title: "SINGLE & RICH",
+    text: "Fortune kept and conscience clear, you marry no one. You become a celebrated London hostess, generous and free - the most modern of all Cecilia's possible lives.\n\nTHE END",
+    bg: 'ballroom'
+  },
+  delvile: {
+    title: "MARRIED TO DELVILE",
+    text: "Love carries her through fever and flight alike. Mrs. Delvile softens at last, and Mortimer marries her - the Beverley fortune passes to Mr. Eggleston under the name condition, but Cecilia wakes to a plainer, truer happiness.\n\nTHE END",
     bg: 'wedding'
   },
-  asylum: {
+  madhouse: {
     title: "THE MADHOUSE",
     text: "Raving and unknown, Cecilia is carried to a private madhouse and locked among strangers. No friend with power to free her comes in time, and the world that courted her fortune lets her name dissolve into the ward's anonymous dark.\n\nA warning, Burney tells us, of what society does to an unguarded heart.\n\nTHE END",
     bg: 'storm'
   },
-  true_love: {
-    title: "TRUE LOVE TRIUMPHS",
-    text: "With Mrs. Delvile's blessing and Mortimer's steadfast heart, you marry for love. The fortune is forfeit to the name condition - but love, freely chosen, is the truer inheritance.\n\nTHE END",
-    bg: 'wedding'
-  },
-  name_condition: {
-    title: "THE NAME CONDITION",
-    text: "Mortimer loves you, but the Delvile name cannot bend, and his family will not relent. You part - fortuneless and estranged - each the other's might-have-been.\n\nTHE END",
-    bg: 'garden'
-  },
-  independence: {
-    title: "INDEPENDENCE",
-    text: "Fortune kept and conscience clear, you marry no one. You become a celebrated London hostess, generous and free - the most modern of all Cecilia's possible lives.\n\nTHE END",
-    bg: 'ballroom'
-  },
-  faded: {
-    title: "FADED",
-    text: "You keep your freedom, but not your means. The invitations thin, the rooms grow cold, and independence curdles quietly into solitude.\n\nTHE END",
+  loveless: {
+    title: "A LOVELESS MARRIAGE",
+    text: (gs) => lovelessHusband(gs) + " takes the Beverley name, and the fortune is preserved. The match is solvent, respectable, and cold: her name endures, her house is safe - but her heart was never consulted.\n\nTHE END",
     bg: 'manor'
-  },
-  fortune_married: {
-    title: "A FORTUNE MARRIED",
-    text: "Gentle Mr. Arnott takes your name and keeps you safe and comfortable. You cannot love him as he loves you - but you are spared every schemer's reach. A calm life, if not a glad one.\n\nTHE END",
-    bg: 'ballroom'
-  },
-  quiet_spinster: {
-    title: "A QUIET LIFE",
-    text: "Mr. Arnott never finds the courage to ask. You live unmarried and of modest means - untroubled, unremarkable, and wholly your own.\n\nTHE END",
-    bg: 'garden'
-  },
-  ruin: {
-    title: "RUIN",
-    text: "Mr. Monckton's long scheme closes over you. Fortune and good name are swept away together, and Mr. Eggleston claims the rest. Nothing is left but the lesson.\n\nTHE END",
-    bg: 'storm'
   }
 };
 
@@ -1272,7 +1247,7 @@ function chooseEnding(type) {
   currentEndingType = type;
   state = 'ending';
   currentScene = { ...ENDINGS[type] };
-  fullText = currentScene.text;
+  fullText = resolveSceneText(currentScene, gameState());
   textIdx = 0;
   displayText = '';
   playSound('victory');
