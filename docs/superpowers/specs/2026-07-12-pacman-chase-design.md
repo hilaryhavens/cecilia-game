@@ -125,6 +125,22 @@ function resolveMazeOutcome(result, gs) {
 - Watch-item from item 14 still applies: if the harness flaps near the 10%
   floor, bump runs or seed the RNG.
 
+## As-built deviations (2026-07-12)
+
+- Delvile rides visibly atop his carriage (Hilary's mid-build request); the cab
+  is his coat-blue (`C.B`) with a dark outline so the moving goal reads against
+  the dark road.
+- Delvile's per-intersection pause probability is divided by 4 in code — the
+  movement engine re-rolls roughly every tile, so the divisor restores the
+  spec's intended per-intersection rate.
+- Caught-with-rescue gets its own finished banner: "SEIZED - YET DELVILE COMES".
+- Balance harness constants as shipped: `pReach = clamp((diff-0.5)/2.5*0.7 +
+  0.15, 0.15, 0.85)`, `pCaught = 0.20`; distribution ≈ 19/39/25/17
+  (single_rich / delvile / madhouse / loveless) — the delvile share rose by
+  design (maze hearts serve the "easier hearts" goal, backlog item 19).
+- Like Pac-Man, Cecilia starts moving (rightward) as soon as the intro banner
+  is dismissed; she never idles unless boxed in.
+
 ## Out of scope
 
 - Backlog item 19 (starting virtue 3/5) — separate item; the maze hearts only
