@@ -825,21 +825,33 @@ SP.tree = [
   "....ttt.........",
 ];
 
-// Scandal sheet (obstacle) — a gossip newspaper: masthead, red scandalous print, wax seal
-SP.scandal = [
-  ".kkkkkkkkkkkk...",
-  ".kwwwwwwwwwwk...",
-  ".kwkkwwkkwwwk...",
-  ".kwwwwwwwwwwk...",
-  ".kwFFwFFwFFwk...",
-  ".kwwwwwwwwwwk...",
-  ".kwFFFwwFFwwk...",
-  ".kwwwwwwwwwwk...",
-  ".kwFFwFFFwwwk...",
-  ".kwwwwwwwwwwk...",
-  ".kwwwwwwFFwwk...",
-  ".kkkkkkkFFFkk...",
-  "........FF......",
+// SHOPKEEPER - the pawnbroker who confines Cecilia; brown coat, white shop apron
+SP.shopkeeper = [
+  "........kkkkkkkk........",
+  ".......kkkkkkkkkk.......",
+  ".......kssssssssk.......",
+  ".......kskssssksk.......",
+  ".......ksssssssk........",
+  "........ssssssss........",
+  ".......jjssssssjj.......",
+  "......jjjjjjjjjjjj......",
+  "......jjjwwwwwwjjj......",
+  ".....sjjwwwwwwwwjjs.....",
+  ".....sjjwwwwwwwwjjs.....",
+  "......jjwwwwwwwwjj......",
+  "......jjwwwwwwwwjj......",
+  "......jjwwwwwwwwjj......",
+  "......jjjwwwwwwjjj......",
+  ".......jwwwwwwwwj.......",
+  ".......wwwwwwwwww.......",
+  ".......wwwwwwwwww.......",
+  ".......wwwwwwwwww.......",
+  "........uuu..uuu........",
+  "........uuu..uuu........",
+  "........sss..sss........",
+  "........sss..sss........",
+  ".......kkkk..kkkk.......",
+  "......kkkkk..kkkkk......",
 ];
 
 // === DRAWING FUNCTIONS ===
@@ -2839,95 +2851,73 @@ function updateChase() {
   else if (chase.t >= 5400) finishChase('collapsed');         // 90s delirium timer
 }
 function chaseResultEnding() { return chase ? chase.outcome : null; }
-// --- chase art helpers (resolution-relative) ---
-function drawHorse(x, y, t, s) {
-  const step = Math.sin(t * 0.4) > 0 ? 1 : -1;   // two-stride gallop
-  fillRect(x, y, 18*s, 8*s, C.a);                 // body
-  fillRect(x + 17*s, y - 4*s, 6*s, 8*s, C.a);     // neck
-  fillRect(x + 22*s, y - 2*s, 7*s, 5*s, C.a);     // head
-  fillRect(x + 16*s, y - 5*s, 3*s, 6*s, C.k);     // mane
-  fillRect(x - 3*s, y + 1*s, 4*s, 7*s, C.k);      // tail
-  fillRect(x + 4*s, y + 8*s, 3*s, 8*s + step*2*s, C.L);   // foreleg
-  fillRect(x + 14*s, y + 8*s, 3*s, 8*s - step*2*s, C.L);  // hindleg
-}
-function drawCarriageRig(x, cabY, t, who, facing) {
-  const s = Math.max(2, Math.round(H / 200));   // smaller rig: cab ~matches the dodge window, less clutter
-  drawHorse(x + facing*30*s, cabY + 10*s, t, s);                    // team out front (in travel direction)
-  fillRect(x + (facing > 0 ? 26*s : -2*s), cabY + 12*s, 2*s, 26*s, C.k); // pole
-  fillRect(x, cabY, 30*s, 20*s, who === 'cecilia' ? C.P : C.L);     // cab body
-  fillRect(x + 2*s, cabY + 4*s, 6*s, 6*s, C.e);                     // lit side lamp
-  for (const wx of [x + 4*s, x + 24*s]) {                            // spoked wheels
-    fillRect(wx, cabY + 20*s, 8*s, 8*s, C.k);
-    fillRect(wx + 2*s, cabY + 22*s, 4*s, 4*s, C.o);
-  }
-  const sp = who === 'cecilia' ? SP.cecilia : SP.delvile;           // recognizable occupant
-  drawSprite(sp, x + 6*s, cabY - 14*s, Math.max(2, s - 1), C, true);
-}
-function drawNightStreet(t) {
-  fillRect(0, 0, W, H, C.n);                                   // night sky
-  fillRect(W - 80, 30, 30, 30, C.c);                          // moon
-  for (let i = 0; i < 6; i++) fillRect(i * (W/6), H*0.45, W/6 - 8, H*0.22, C.u); // terrace
-  fillRect(W*0.55, H*0.30, 16, 40, C.u);                      // church steeple
-  for (let i = 0; i < 8; i++) fillRect(20 + i*(W/8), H*0.5 + (i%2)*12, 6, 8, C.e); // lit windows
-  for (const lx of [W*0.22, W*0.7]) { fillRect(lx, H*0.62, 4, 26, C.u); fillRect(lx - 6, H*0.58, 14, 12, C.e); } // gas lamps
-  fillRect(0, H*0.66, W, H*0.34, C.a);                        // road
-  for (let x = -(t*6) % 120; x < W; x += 120) fillRect(x, H*0.82, 16, 6, C.k); // cobbles
-}
-function drawDeliriumField(t, reachFrac, overFrac) {
-  fillRect(0, 0, W, H, C.I);                       // pulsing blood-red base
-  const cx = W/2, cy = H*0.42;
-  ctx.strokeStyle = 'rgba(255,90,90,0.10)'; ctx.lineWidth = 2;   // concentric warp rings
-  for (let i = 1; i <= 6; i++) { ctx.beginPath(); ctx.arc(cx, cy, i*34, 0, Math.PI*2); ctx.stroke(); }
-  for (let i = 0; i < 40; i++) fillRect((i*53 + t*3) % W, (i*71) % H, 3, 3, C.r);   // drifting motes
-  const press = overFrac * 30;                     // looming gossip-faces, pressing in as overtaken rises
-  ctx.fillStyle = 'rgba(225,210,220,0.28)';
-  ctx.beginPath(); ctx.ellipse(40 + press, H*0.6, 34, 42, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(W - 40 - press, H*0.62, 38, 46, 0, 0, Math.PI*2); ctx.fill();
-  const vg = ctx.createRadialGradient(cx, H/2, H*0.3, cx, H/2, H*0.75);   // vignette
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
-  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+// --- maze chase art ---
+// Compact carriage for the maze (Delvile inside, lamp lit)
+function drawMazeCarriage(x, y, t, facing) {
+  const step = Math.sin(t * 0.4) > 0 ? 1 : 0;
+  fillRect(x + (facing > 0 ? 10 : -22), y - 2 + step, 12, 6, C.a);          // horse body
+  fillRect(x + (facing > 0 ? 20 : -27), y - 5 + step, 5, 5, C.a);           // horse head
+  fillRect(x - 12, y - 9, 22, 14, C.L);                                     // cab
+  fillRect(x - 8, y - 5, 6, 6, C.e);                                        // lit window
+  fillRect(x - 10, y + 5, 6, 6, C.k); fillRect(x + 2, y + 5, 6, 6, C.k);    // wheels
 }
 function drawChase() {
-  if (chase.phase === 1) {
-    drawNightStreet(chase.t);
-    const sh = (chase.t < (chase.shakeUntil || 0)) ? (Math.random()*6 - 3) : 0;
-    // Delvile ahead on a fixed mid-road lane; x derived from the gap
-    const dx = Math.min(W - 140, W - 140 - Math.max(0, chase.gap));
-    drawCarriageRig(dx + sh, H*0.55, chase.t, 'delvile', -1);
-    // Cecilia (player) steers vertically via chase.laneY
-    drawCarriageRig(40 + sh, chase.laneY, chase.t, 'cecilia', 1);
-    for (const o of chase.obstacles) drawSprite(SP.scandal, o.x, o.y, 3);
-    // instruction banner, charity-minigame style: name the obstacles so they read
-    fillRect(W / 2 - 300, 18, 600, 40, C.k);
-    fillRect(W / 2 - 300, 18, 600, 3, C.w);
-    drawText('CHASE HIS CARRIAGE  -  ↑↓ STEER', W/2, 25, C.w, 1, 'center');
-    drawText('DODGE THE SCANDAL SHEETS (RED) - GOSSIP SLOWS YOUR PURSUIT', W/2, 43, C.r, 1, 'center');
-    fillRect(W - 260, 70, 230, 18, C.k);
-    fillRect(W - 258, 72, 226 * (1 - Math.min(1, Math.max(0, chase.gap) / 320)), 14, C.v);
-    drawText('CLOSING', W - 255, 72, C.w, 1, 'left', false);
-  } else {
-    const reachFrac = Math.min(1, chase.reach / 100);
-    const overFrac  = Math.min(1, chase.overtaken / 100);
-    drawDeliriumField(chase.t, reachFrac, overFrac);
-    const shake = Math.sin(chase.t * 0.5) * 4;
-    // Mortimer ahead: sharpens (alpha) and drifts toward centre as reach rises; dissolves with overtaken
-    const dAlpha = Math.max(0, reachFrac - overFrac*0.6);
-    const dmx = W*0.7 - reachFrac * W*0.18;
-    ctx.save(); ctx.globalAlpha = 0.25 + 0.6*dAlpha;
-    drawSprite(SP.delvile, dmx, H*0.42, 3, C, true);
+  fillRect(0, 0, W, H, C.k);
+  fillRect(0, MAZE_Y, W, MAZE.length * TILE, C.a);            // cobbled streets
+  for (let r = 0; r < MAZE.length; r++) for (let c = 0; c < MAZE[0].length; c++) {
+    const x = c * TILE, y = MAZE_Y + r * TILE;
+    if (MAZE[r][c] === '#') {                                 // Georgian terrace blocks as walls
+      fillRect(x + 1, y + 1, TILE - 2, TILE - 2, C.u);
+      fillRect(x + 8, y + 10, 8, 10, C.e);                    // lit sash windows
+      fillRect(x + 24, y + 10, 8, 10, C.e);
+      fillRect(x + 4, y + 30, TILE - 8, 4, C.N);              // plinth
+    } else if ((c + r) % 2 === 0) {
+      fillRect(x + 18, y + 18, 4, 4, C.k);                    // cobble dots
+    }
+  }
+  for (const p of chase.pellets) {                            // pellets
+    if (p.taken) continue;
+    const x = tileCX(p.c), y = tileCY(p.r);
+    if (p.kind === 'h') {                                     // heart
+      fillRect(x - 6, y - 6, 5, 5, C.i); fillRect(x + 1, y - 6, 5, 5, C.i);
+      fillRect(x - 6, y - 2, 12, 4, C.i); fillRect(x - 3, y + 2, 6, 4, C.i);
+    } else if (p.kind === 'c') {                              // guinea
+      fillRect(x - 4, y - 4, 8, 8, C.g); fillRect(x - 2, y - 2, 4, 4, C.e);
+    } else {                                                  // boost: pulsing power pellet
+      const pu = 8 + (Math.sin(chase.t * 0.15) > 0 ? 3 : 0);
+      fillRect(x - pu / 2, y - pu / 2, pu, pu, C.w);
+    }
+  }
+  drawMazeCarriage(chase.delvile.x, chase.delvile.y, chase.t, chase.delvile.dir === 'left' ? -1 : 1);
+  const sk = chase.shopkeeper;
+  if (chase.boost > 0) {                                      // frightened: he flickers as he flees
+    ctx.save(); ctx.globalAlpha = (chase.boost % 20 < 10) ? 0.45 : 0.85;
+    drawSprite(SP.shopkeeper, sk.x - 12, sk.y - 13, 1, C, true);
     ctx.restore();
-    // Cecilia running (her portrait), vertical bob + motion trail
-    const cyB = H*0.42 + Math.sin(chase.t * 0.3) * 6;
-    ctx.save(); ctx.globalAlpha = 0.25; drawSprite(SP.cecilia, W*0.34 - 20 + shake, cyB, 4, C, false); ctx.restore();
-    ctx.save(); ctx.globalAlpha = 0.5;  drawSprite(SP.cecilia, W*0.34 - 8 + shake,  cyB, 4, C, false); ctx.restore();
-    drawSprite(SP.cecilia, W*0.34 + shake, cyB, 4, C, true);
-    drawText('MASH → OR SPACE - REACH HIM', W/2, 30, C.w, 2, 'center');
-    drawText('BEFORE THE CROWD OVERTAKES YOU', W/2, 58, C.r, 1, 'center');
-    // meters: REACH gold, OVERTAKEN dark-red
-    fillRect(80, 120, 300, 22, C.k); fillRect(82, 122, 296 * reachFrac, 18, C.g);
-    drawText('REACH DELVILE', 90, 124, C.w, 1, 'left', false);
-    fillRect(80, 150, 300, 22, C.k); fillRect(82, 152, 296 * overFrac, 18, C.F);
-    drawText('OVERTAKEN', 90, 154, C.w, 1, 'left', false);
+  } else drawSprite(SP.shopkeeper, sk.x - 12, sk.y - 13, 1, C, true);
+  drawSprite(SP.ceciliaWalk, chase.cecilia.x - 12, chase.cecilia.y - 16, 1, C, true);
+  // delirium vignette closes in as the timer rises
+  const dvf = Math.min(1, chase.t / 5400);
+  if (dvf > 0.2) {
+    const vg = ctx.createRadialGradient(W/2, H/2, H * (0.85 - 0.45 * dvf), W/2, H/2, H * 0.95);
+    vg.addColorStop(0, 'rgba(112,32,48,0)'); vg.addColorStop(1, `rgba(112,32,48,${0.55 * dvf})`);
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  }
+  // HUD strip
+  fillRect(0, 0, W, MAZE_Y, C.k); fillRect(0, MAZE_Y - 3, W, 3, C.w);
+  drawText("CATCH DELVILE'S CARRIAGE - EVADE THE SHOPKEEPER", W / 2, 8, C.w, 1, 'center');
+  fillRect(16, 28, 240, 18, C.u);                             // delirium meter
+  fillRect(18, 30, 236 * dvf, 14, C.F);
+  drawText('DELIRIUM', 22, 33, C.w, 1, 'left', false);
+  drawText('LOVE ' + stats.hearts + '/5', W - 260, 32, C.i, 1, 'left');
+  drawText('£' + stats.gold, W - 130, 32, C.g, 1, 'left');
+  if (chase.intro) {                                          // instruction banner, charity-minigame style
+    fillRect(W/2 - 330, H/2 - 64, 660, 128, C.k);
+    fillRect(W/2 - 330, H/2 - 64, 660, 3, C.w);
+    drawText('MAD WITH FEVER, CECILIA RUNS INTO THE LONDON NIGHT', W/2, H/2 - 44, C.r, 1, 'center');
+    drawText("ARROWS / WASD - CATCH DELVILE'S CARRIAGE", W/2, H/2 - 18, C.w, 1, 'center');
+    drawText('EVADE THE SHOPKEEPER - WHITE PELLETS GRANT SPEED', W/2, H/2 + 4, C.w, 1, 'center');
+    drawText('PRESS ANY KEY TO RUN', W/2, H/2 + 34, C.y, 1, 'center');
   }
 }
 
@@ -3026,7 +3016,10 @@ function draw() {
     drawChase();
     if (chase.finished) {
       ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(0, 0, W, H);
-      const banner = chase.mad ? 'DECLARED MAD' : (chase.caught ? 'YOU REACH HIM' : 'HE IS LOST TO YOU');
+      const banner = chase.mad ? 'DECLARED MAD'
+                   : chase.result === 'reached' ? 'YOU REACH HIM'
+                   : chase.result === 'caught'  ? 'SEIZED - YET DELVILE COMES'
+                   : 'HE IS LOST TO YOU';
       const bcol = chase.mad ? C.F : (chase.caught ? C.g : C.x);
       drawText(banner, W/2, 230, bcol, 3, 'center');
       drawText('Press SPACE', W/2, 320, C.w, 2, 'center');
