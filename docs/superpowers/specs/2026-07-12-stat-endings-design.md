@@ -71,6 +71,15 @@ resolveEnding(caught, gs) -> 'madhouse' | 'delvile' | 'single_rich' | 'loveless'
 `resolveChase` calls it directly for both chase outcomes (the wish state is
 gone). The chase-end banner keeps its current caught/lost/mad messaging.
 
+## Ending screen: prominent final stats
+
+Every ending screen keeps the normal HUD **and adds a prominent "final
+reckoning" panel** directly beneath the ending title: the three stats that
+decided the outcome — LOVE (hearts), VIRTUE (pips), GOLD (£ figure) — rendered
+centered at large scale (≥2, matching the title's weight) in a framed band, so
+the player sees exactly which numbers produced this ending. Same values as the
+HUD; display only, no logic. Layout must not overlap the ending-text box.
+
 ## Monte-Carlo balance check
 
 A Node harness (committed to the repo, e.g. `balance-check.mjs`) simulates a few
