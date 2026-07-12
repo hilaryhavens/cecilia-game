@@ -1012,6 +1012,23 @@ function chaseDifficulty(gs) {
   c += Math.min(s.hearts, 5) * 0.15;   // love makes her press harder after him
   return Math.max(0.5, c);
 }
+// Two-axis ending grid (spec: docs/superpowers/specs/2026-07-12-stat-endings-design.md).
+// Love is checked FIRST so a collapsed Cecilia whose devotion clears the bar is
+// married out of her delirium rather than committed. Failing the chase raises the
+// love bar (5 vs 3) and widens the madhouse trapdoor.
+function resolveEnding(caught, gs) {
+  const s = gs.stats;
+  if (s.hearts >= (caught ? 3 : 5)) return 'delvile';
+  const collapsed = caught ? (s.virtue <= 2 || s.gold <= 3000)
+                           : (s.virtue <= 3 || s.gold <= 4500);
+  if (collapsed) return 'madhouse';
+  if (s.gold >= 7500 && s.virtue >= 4) return 'single_rich';
+  return 'loveless';
+}
+// Who takes the Beverley name in the loveless ending.
+function lovelessHusband(gs) {
+  return (gs.flags.kindToArnott || gs.suitors.arnott >= 2) ? 'Mr. Arnott' : 'Mr. Monckton';
+}
 // Resolve a scene's text whether it's a string or a function of game state.
 function resolveSceneText(scene, gs) {
   return (typeof scene.text === 'function') ? scene.text(gs) : (scene.text || '');
@@ -3011,7 +3028,7 @@ function gameLoop() {
 // === TEST SEAM: pure logic + a live-state view for browser-driven tests ===
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
-  blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, resolveChase, chaseDifficulty,
+  blankGS, applyGift, shouldBreakDown, resolveWish, resolveBreakpoint, resolveChase, chaseDifficulty, resolveEnding, lovelessHusband,
   resolveSceneText, visibleChoices, gameState, SCENES, clampVirtue, clampHearts,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
