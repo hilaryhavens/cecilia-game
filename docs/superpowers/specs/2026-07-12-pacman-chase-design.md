@@ -140,6 +140,8 @@ function resolveMazeOutcome(result, gs) {
   design (maze hearts serve the "easier hearts" goal, backlog item 19).
 - Like Pac-Man, Cecilia starts moving (rightward) as soon as the intro banner
   is dismissed; she never idles unless boxed in.
+- Shopkeeper speed tuned 2.3 → 2.15 px/f after Hilary's playtest (he closed on
+  an idle player in ~4s); Cecilia keeps a wider 2.5 edge.
 
 ## Out of scope
 

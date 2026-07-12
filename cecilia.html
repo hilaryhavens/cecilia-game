@@ -2812,7 +2812,7 @@ function updateDelvile() {
 }
 function updateShopkeeper() {
   const sk = chase.shopkeeper, cc = chase.cecilia;
-  stepActor(sk, chase.boost > 0 ? 1.8 : 2.3, a => huntDir(a, cc.x, cc.y, chase.boost <= 0));
+  stepActor(sk, chase.boost > 0 ? 1.8 : 2.15, a => huntDir(a, cc.x, cc.y, chase.boost <= 0));
 }
 function finishChase(result) {
   chase.result = result;
