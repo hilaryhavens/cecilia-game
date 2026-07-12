@@ -29,25 +29,26 @@ implementation review.
 
 The chase always plays. Let `caught` = she caught Delvile. Resolution order:
 
-1. **Standing collapse → `madhouse`.**
-   - `caught`: `virtue <= 2 || gold <= 3000` (today's breakdown line).
-   - `!caught`: heartbreak widens the trapdoor — `virtue <= 3 || gold <= 4500`.
-2. **Love → `delvile`.**
+1. **Love → `delvile`.**
    - `caught`: `hearts >= 3`.
    - `!caught`: `hearts >= 5` (only maximal devotion reaches him after he flees).
+2. **Standing collapse → `madhouse`.**
+   - `caught`: `virtue <= 2 || gold <= 3000` (today's breakdown line).
+   - `!caught`: heartbreak widens the trapdoor — `virtue <= 3 || gold <= 4500`.
 3. **`single_rich`** — `gold >= 7500 && virtue >= 4`.
 4. **`loveless`** — everything else (name intact, solvent middle).
 
+Checking love first encodes the **delirium rescue**: a Cecilia whose standing
+has collapsed but whose love clears the tilted Delvile bar is married out of
+her delirium (`delvile`) rather than committed — the same outcome the old
+`survival` ending covered. For everyone below the love bar, collapse means the
+madhouse, full stop. This ordering replaces `resolveBreakpoint`'s flag-based
+rescue; `survival` as a distinct ending is gone (absorbed by `delvile`).
+
 Failing the chase therefore both raises the Delvile bar (5 hearts vs. 3) and
 widens the madhouse trapdoor — the requested lever. Stats also still steer the
-chase itself via `chaseDifficulty` (unchanged), so they matter twice.
-
-The mid-chase breakdown path ("DECLARED MAD") routes into this same grid: a
-breakdown is a standing collapse under rule 1, so it yields `madhouse` — unless
-rule 2 would have fired anyway (love strong enough for the tilted bar), in which
-case Delvile marries her out of the delirium and it resolves `delvile`. This
-replaces `resolveBreakpoint`'s flag-based rescue; `survival` as a distinct
-ending is gone (its role is absorbed by `delvile`).
+chase itself via `chaseDifficulty` (unchanged), so they matter twice. The
+mid-chase breakdown ("DECLARED MAD") path simply feeds this same grid.
 
 ## Removals
 
