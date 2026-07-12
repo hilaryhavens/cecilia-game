@@ -2687,6 +2687,40 @@ function drawMinigame() {
 
 // === DELIRIUM CHASE ===
 let chase = null;
+// The streets of London: 20x13 tile maze, 40px tiles, under a 60px HUD strip.
+// '#' wall, '.' street, 'h' heart, 'c' coin, 'b' boost, P/D/S = Cecilia/Delvile/shopkeeper spawns.
+const TILE = 40, MAZE_Y = 60;
+const MAZE = [
+  "####################",
+  "#P......c..c......D#",
+  "#.##.###....###.##.#",
+  "#.#....#.##.#..c.#.#",
+  "#.#.##...##...##.#.#",
+  "#c..#..#.h..#..#...#",
+  "#.#.#..#..S.#h.#.#.#",
+  "#...#..#..h.#..#..c#",
+  "#.#.##...##...##.#.#",
+  "#.#.c..#.##.#..b.#.#",
+  "#.##.###....###.##.#",
+  "#b......c..c......b#",
+  "####################",
+];
+function parseMaze() {
+  const pellets = [], spawns = {};
+  MAZE.forEach((row, r) => {
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c];
+      if (ch === 'h' || ch === 'c' || ch === 'b') pellets.push({ c, r, kind: ch, taken: false });
+      if (ch === 'P' || ch === 'D' || ch === 'S') spawns[ch] = { c, r };
+    }
+  });
+  return { pellets, spawns };
+}
+function mazeWall(c, r) {
+  return r < 0 || r >= MAZE.length || c < 0 || c >= MAZE[0].length || MAZE[r][c] === '#';
+}
+function tileCX(c) { return c * TILE + TILE / 2; }
+function tileCY(r) { return MAZE_Y + r * TILE + TILE / 2; }
 function initChase() {
   const diff = chaseDifficulty(gameState());
   chase = {
@@ -2993,7 +3027,7 @@ function gameLoop() {
 // === TEST SEAM: pure logic + a live-state view for browser-driven tests ===
 // Verified by Playwright pure-logic suite (see cecilia-implementation-plan.md Task 3).
 window.Cecilia = {
-  blankGS, applyGift, resolveEnding, resolveMazeOutcome, lovelessHusband, chaseDifficulty,
+  blankGS, applyGift, resolveEnding, resolveMazeOutcome, MAZE, parseMaze, lovelessHusband, chaseDifficulty,
   resolveSceneText, visibleChoices, gameState, SCENES, clampVirtue, clampHearts,
   giveTo(kind) { return applyGift(gameState(), kind); },
   chaseResultEnding,
