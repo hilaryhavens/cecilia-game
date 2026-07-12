@@ -2328,6 +2328,45 @@ function drawHUD() {
   }
 }
 
+// Final reckoning: the three stats that decided the ending, writ large (item 14).
+// Three centered rows at scale 2 (a single row at S=2 is ~910px and cannot fit W=800).
+// Band y 130..290 sits between the title band (64..124) and the text box (300..).
+function drawFinalReckoning() {
+  const S = 2, CH = 8 * S, gap = 16;
+  const top = 130, rowH = 48, panH = 16 + 3 * rowH;   // 160 -> bottom edge 290
+  fillRect(0, top, W, panH, C.k);
+  fillRect(0, top, W, 4, C.w);
+  fillRect(0, top + panH - 4, W, 4, C.w);
+  const heartPitch = 50, heartBox = 36;      // 25/18 at 1x, scaled 2x (cf. drawHUD)
+  const pipPitch = 32, pipW = 24, pipH = 40; // 16/12/20 at 1x, scaled 2x
+  let y = top + 8;
+  // LOVE
+  let w = 4 * CH + gap + 4 * heartPitch + heartBox;
+  let x = Math.round((W - w) / 2);
+  drawText('LOVE', x, y + Math.round((rowH - CH) / 2), C.w, S, 'left', false);
+  x += 4 * CH + gap;
+  for (let i = 0; i < 5; i++) {
+    if (i < stats.hearts) drawSprite(SP.heart, x + i * heartPitch, y + Math.round((rowH - heartBox) / 2), S);
+    else fillRect(x + i * heartPitch, y + Math.round((rowH - heartBox) / 2), heartBox, heartBox, C.u);
+  }
+  y += rowH;
+  // GOLD
+  const goldStr = fmtGold(stats.gold);
+  w = 4 * CH + gap + goldStr.length * CH;
+  x = Math.round((W - w) / 2);
+  drawText('GOLD', x, y + Math.round((rowH - CH) / 2), C.g, S, 'left', false);
+  drawText(goldStr, x + 4 * CH + gap, y + Math.round((rowH - CH) / 2), C.g, S, 'left', false);
+  y += rowH;
+  // VIRTUE
+  w = 6 * CH + gap + 5 * pipPitch + pipW;
+  x = Math.round((W - w) / 2);
+  drawText('VIRTUE', x, y + Math.round((rowH - CH) / 2), C.h, S, 'left', false);
+  x += 6 * CH + gap;
+  for (let i = 0; i < 6; i++) {
+    fillRect(x + i * pipPitch, y + Math.round((rowH - pipH) / 2), pipW, pipH, i < stats.virtue ? C.v : C.u);
+  }
+}
+
 function drawDialogue(scene) {
   if (!scene || (!scene.speaker && !scene.text)) return;
   const boxTop = 322, boxH = H - boxTop;   // taller box: 322..600
@@ -2909,6 +2948,7 @@ function draw() {
       fillRect(0, 64, W, 60, C.k);
       drawText(currentScene.title, W/2, 79, C.g, 3, 'center');
     }
+    drawFinalReckoning();
     // Dialogue box for ending text
     const boxH = 280;
     const boxY = H - boxH - 20;
