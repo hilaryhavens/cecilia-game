@@ -2785,12 +2785,18 @@ function huntDir(a, tx, ty, minimize) {
   return best;
 }
 function aboutFace(a) { [a.c, a.tc] = [a.tc, a.c]; [a.r, a.tr] = [a.tr, a.r]; a.dir = OPP[a.dir]; }
+const CHASE_KEYS = { up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'], left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'] };
 function updateCecilia() {
   const cc = chase.cecilia;
-  if (keys['ArrowUp'] || keys['KeyW']) chase.want = 'up';
-  else if (keys['ArrowDown'] || keys['KeyS']) chase.want = 'down';
-  else if (keys['ArrowLeft'] || keys['KeyA']) chase.want = 'left';
-  else if (keys['ArrowRight'] || keys['KeyD']) chase.want = 'right';
+  // The freshest key PRESS always wins (a tapped turn is never eaten by a held
+  // key) and stays buffered until the turn happens; once it has (or if nothing
+  // is buffered), control falls back to whichever direction is still held.
+  for (const d in CHASE_KEYS) if (CHASE_KEYS[d].some(k => keyPressed(k))) chase.want = d;
+  if (!chase.want || cc.dir === chase.want) {
+    for (const d in CHASE_KEYS) {
+      if (d !== chase.want && CHASE_KEYS[d].some(k => keys[k])) { chase.want = d; break; }
+    }
+  }
   // instant about-face mid-corridor, like Pac-Man
   if (chase.want === OPP[cc.dir] && (cc.tc !== cc.c || cc.tr !== cc.r)) aboutFace(cc);
   stepActor(cc, chase.boost > 0 ? 3.75 : 2.5, a => {
@@ -2913,13 +2919,22 @@ function drawChase() {
   drawText('DELIRIUM', 22, 33, C.w, 1, 'left', false);
   drawText('LOVE ' + stats.hearts + '/5', W - 260, 32, C.i, 1, 'left');
   drawText('£' + stats.gold, W - 130, 32, C.g, 1, 'left');
-  if (chase.intro) {                                          // instruction banner, charity-minigame style
-    fillRect(W/2 - 330, H/2 - 64, 660, 128, C.k);
-    fillRect(W/2 - 330, H/2 - 64, 660, 3, C.w);
-    drawText('MAD WITH FEVER, CECILIA RUNS INTO THE LONDON NIGHT', W/2, H/2 - 44, C.r, 1, 'center');
-    drawText("ARROWS / WASD - CATCH DELVILE'S CARRIAGE", W/2, H/2 - 18, C.w, 1, 'center');
-    drawText('EVADE THE SHOPKEEPER - WHITE PELLETS GRANT SPEED', W/2, H/2 + 4, C.w, 1, 'center');
-    drawText('PRESS ANY KEY TO RUN', W/2, H/2 + 34, C.y, 1, 'center');
+  if (chase.intro) {                                          // instruction banner: big type + a sprite legend
+    fillRect(W/2 - 360, 150, 720, 300, C.k);
+    fillRect(W/2 - 360, 150, 720, 3, C.w);
+    fillRect(W/2 - 360, 447, 720, 3, C.w);
+    drawText('MAD WITH FEVER, CECILIA RUNS INTO THE LONDON NIGHT', W/2, 172, C.r, 1, 'center');
+    // legend row 1: Delvile's carriage (2x) — the quarry
+    ctx.save(); ctx.translate(150, 252); ctx.scale(2, 2);
+    drawMazeCarriage(0, 0, chase.t, 1);
+    ctx.restore();
+    drawText("CATCH DELVILE'S CARRIAGE", 224, 236, C.w, 1.5, 'left');
+    // legend row 2: the shopkeeper (2x) — the pursuer
+    drawSprite(SP.shopkeeper, 126, 296, 2, C, true);
+    drawText('EVADE THE SHOPKEEPER', 224, 314, C.w, 1.5, 'left');
+    drawText('ARROWS / WASD TO MOVE', W/2, 372, C.w, 1.5, 'center');
+    drawText('WHITE PELLETS GRANT SPEED', W/2, 398, C.w, 1.5, 'center');
+    if (Math.floor(frame / 30) % 2 === 0) drawText('PRESS ANY KEY TO RUN', W/2, 424, C.y, 1.5, 'center');
   }
 }
 
@@ -2943,6 +2958,9 @@ function update() {
         displayText = fullText.substring(0, textIdx);
         if (textIdx % 3 === 0) playSound('type');
       }
+      // Space/Enter while typing reveals the whole line; consuming the press
+      // here also stops it leaking through and instantly picking a choice.
+      if (keyPressed('Space') || keyPressed('Enter')) { textIdx = fullText.length; displayText = fullText; }
     } else {
       const vis = visibleChoices(currentScene, gameState());
       if (vis && vis.length) {
@@ -2983,6 +3001,7 @@ function update() {
         displayText = fullText.substring(0, textIdx);
         if (textIdx % 3 === 0) playSound('type');
       }
+      if (keyPressed('Space') || keyPressed('Enter')) { textIdx = fullText.length; displayText = fullText; }
     } else {
       if (keyPressed('Space') || keyPressed('Enter')) {
         resetGame();
