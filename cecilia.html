@@ -940,7 +940,7 @@ let currentScene = null;
 let currentEndingType = null;
 let choiceStartY = 0;   // y where the choice list begins (set by drawDialogue so choices never overlap the spoken line)
 
-let stats = { hearts: 0, gold: 10000, virtue: 6 };
+let stats = { hearts: 0, gold: 10000, virtue: 3 };
 let suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
 let flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
               sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
@@ -950,7 +950,7 @@ let mg = null;
 // === PURE DECISION LOGIC (no side effects; testable via window.Cecilia) ===
 function blankGS() {
   return {
-    stats:   { hearts: 0, gold: 10000, virtue: 6 },
+    stats:   { hearts: 0, gold: 10000, virtue: 3 },
     suitors: { delvile: 0, monckton: 0, floyer: 0, arnott: 0 },
     flags:   { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
                sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
@@ -1146,7 +1146,7 @@ const SCENES = [
     character: 'elderdelvile',
     choices: [
       { text: "'I would never wish to diminish your family, sir.'", effect: (gs) => {} },
-      { text: "'A name is not worth a son's happiness.'", effect: (gs) => {} }
+      { text: "'A name is not worth a son's happiness.'", effect: (gs) => { gs.stats.hearts += 1; clampHearts(gs); } }
     ],
     onContinue: returnFromRoomDetour,
   },
@@ -1161,7 +1161,7 @@ const SCENES = [
         effect: (gs) => { gs.flags.agreedSecretMarriage = true; gs.stats.hearts += 1; clampHearts(gs); } },
       { text: "'Not in secret. I will not begin in shame.'", condition: (gs) => gs.suitors.delvile >= 1,
         effect: (gs) => { gs.stats.virtue += 1; clampVirtue(gs); gs.stats.hearts -= 1; clampHearts(gs); } },
-      { text: "'We are friends, Mr. Delvile. Let that content us.'", condition: (gs) => gs.suitors.delvile < 1, effect: (gs) => {} },
+      { text: "'We are friends, Mr. Delvile. Let that content us.'", condition: (gs) => gs.suitors.delvile < 1, effect: (gs) => { gs.stats.hearts += 1; clampHearts(gs); } },
       { text: "'Your family watches us, sir. I must go.'", condition: (gs) => gs.suitors.delvile < 1, effect: (gs) => {} }
     ],
     onContinue: returnFromRoomDetour,
@@ -1233,7 +1233,7 @@ function setupScene() {
   choiceIdx = 0;
 }
 function resetGame() {
-  stats = { hearts: 0, gold: 10000, virtue: 6 };
+  stats = { hearts: 0, gold: 10000, virtue: 3 };
   suitors = { delvile: 0, monckton: 0, floyer: 0, arnott: 0 };
   flags = { mrsDelvileApproval: false, agreedSecretMarriage: false, kindToArnott: false,
             sympathizedWithHarrel: false, encouragedFloyer: false, gaveMoneyToHarrel: false,
