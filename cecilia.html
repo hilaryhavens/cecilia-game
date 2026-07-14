@@ -13,6 +13,7 @@
     background-image:
       radial-gradient(ellipse at center, #2c1810 0%, #0a0506 100%);
     min-height: 100vh;
+    min-height: 100dvh;  /* phones: exclude the browser address bar, else the game sits low and clips */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -130,15 +131,21 @@
   #dpad .w { left: 10px;  top: 50%; transform: translateY(-50%); }
   #dpad .e { right: 10px; top: 50%; transform: translateY(-50%); }
   #btn-act {
-    right: calc(20px + env(safe-area-inset-right));
-    bottom: calc(34px + env(safe-area-inset-bottom));
-    width: 84px; height: 84px;
-    border-radius: 50%;
+    right: calc(14px + env(safe-area-inset-right));
+    bottom: calc(48px + env(safe-area-inset-bottom));
+    width: 122px; height: 54px;
+    border-radius: 10px;
     background: rgba(0,0,0,0.45);
     border: 2px solid #d4af37;
-    color: #d4af37; font-size: 30px; line-height: 80px; text-align: center;
+    box-shadow: 0 4px 0 rgba(212,175,55,0.5);   /* keycap edge */
+    color: #d4af37; font-size: 13px; line-height: 50px; text-align: center;
+    letter-spacing: 2px;
   }
-  #btn-act:active { background: rgba(212,175,55,0.35); }
+  #btn-act:active {
+    background: rgba(212,175,55,0.35);
+    transform: translateY(3px);                  /* keycap presses down */
+    box-shadow: 0 1px 0 rgba(212,175,55,0.5);
+  }
   #btn-music {
     top: calc(10px + env(safe-area-inset-top));
     right: calc(12px + env(safe-area-inset-right));
@@ -187,15 +194,20 @@ ctx.imageSmoothingEnabled = false;
 
 // === RESPONSIVE: scale internal 800x600 to fit the window (preserve aspect) ===
 function resizeGame() {
+  // visualViewport = the part of the page actually visible on phones (innerHeight
+  // can include space hidden behind the browser's address bar)
+  const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   // leave ~12% vertical room for the title bar + controls + TV frame padding
-  const availW = window.innerWidth * 0.96;
+  const availW = vw * 0.96;
   // On short screens the title bar and hints are hidden, so the canvas may take more height
-  const availH = window.innerHeight * (window.innerHeight < 520 ? 0.90 : 0.86);
+  const availH = vh * (vh < 520 ? 0.90 : 0.86);
   const scale = Math.max(0.25, Math.min(availW / 800, availH / 600));
   canvas.style.width = Math.round(800 * scale) + 'px';
   canvas.style.height = Math.round(600 * scale) + 'px';
 }
 window.addEventListener('resize', resizeGame);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resizeGame);
 resizeGame();
 
 const W = 800, H = 600;
@@ -1371,7 +1383,7 @@ function buildTouchControls() {
   pad.innerHTML = '<span class="n">▲</span><span class="s">▼</span><span class="w">◀</span><span class="e">▶</span>';
   const act = document.createElement('div');
   act.id = 'btn-act';
-  act.textContent = '✦';
+  act.textContent = 'SPACE';
   const mus = document.createElement('div');
   mus.id = 'btn-music';
   mus.textContent = '♪';
