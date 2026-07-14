@@ -1954,8 +1954,10 @@ function drawRoom() {
   }
   if (room.doorFlash > 0 && Math.floor(frame / 15) % 2 === 0)
     drawText('THE DOOR STANDS OPEN', W / 2, 120, C.g, 2, 'center');
-  if (atDoor && !room.talk && Math.floor(frame / 30) % 2 === 0)
-    drawText('PRESS SPACE TO DEPART', W / 2, H - 24, C.g, 1.5, 'center', false);
+  if (atDoor && !room.talk && Math.floor(frame / 30) % 2 === 0) {
+    fillRect(W / 2 - 200, H - 46, 400, 40, C.k);
+    drawText('PRESS SPACE TO DEPART', W / 2, H - 36, C.g, 2, 'center', false);
+  }
   if (room.talk) {
     // compact speech box, styled after drawDialogue but only ~1/4 screen tall
     const bT = 468;
@@ -1972,7 +1974,8 @@ function drawRoom() {
   }
   const near = nearNpc();
   if (near && !atDoor && !room.talk && Math.floor(frame / 30) % 2 === 0) {
-    drawText('PRESS SPACE TO SPEAK', W / 2, H - 24, C.g, 1.5, 'center', false);
+    fillRect(W / 2 - 200, H - 46, 400, 40, C.k);
+    drawText('PRESS SPACE TO SPEAK', W / 2, H - 36, C.g, 2, 'center', false);
   }
   drawHUD();
   if (room.intro) {
@@ -2909,9 +2912,12 @@ function drawMinigame() {
   // instruction banner: tell the player exactly who to give to
   fillRect(W / 2 - 300, 6, 600, 44, C.k);
   fillRect(W / 2 - 300, 6, 600, 3, C.w);
-  drawText('GIVE TO THE WORTHY (GREEN, DOWN)', W / 2, 12, C.w, 1.5, 'center');
-  drawText('JUMP OVER SPENDTHRIFTS (RED)', W / 2, 31, C.r, 1.5, 'center');
-  drawText('←→ WALK   ↓/S GIVE   SPACE JUMP', W / 2, H - 28, C.c, 1.5, 'center');
+  fillRect(W / 2 - 310, 6, 620, 74, C.k);
+  fillRect(W / 2 - 310, 6, 620, 3, C.w);
+  drawText('GIVE TO THE WORTHY (GREEN, DOWN)', W / 2, 16, C.w, 2, 'center');
+  drawText('JUMP OVER SPENDTHRIFTS (RED)', W / 2, 48, C.r, 2, 'center');
+  fillRect(W / 2 - 260, H - 44, 520, 40, C.k);
+  drawText('←→ WALK   ↓/S GIVE   SPACE JUMP', W / 2, H - 34, C.w, 2, 'center');
 }
 
 // === DELIRIUM CHASE ===
