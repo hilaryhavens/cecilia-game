@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Cecilia: A Marriage Quest</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -72,6 +73,46 @@
     border: 1px solid #d4af37;
     border-radius: 3px;
   }
+  /* === MOBILE === */
+  html, body {
+    touch-action: none;              /* no scroll/pinch while playing */
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (pointer: coarse) {
+    #controls { display: none; }     /* keyboard hints are meaningless on touch */
+    html, body { overflow: hidden; } /* the canvas scales to fit; nothing scrolls */
+  }
+  /* Short screens (phone landscape): shed chrome so the scene gets the room */
+  @media (max-height: 520px) {
+    html, body { overflow: hidden; }
+    body { padding: 6px; gap: 6px; }
+    #title-bar { display: none; }
+    #controls { display: none; }
+    #tv-frame { padding: 12px 10px; border-radius: 24px 24px 10px 10px; }
+    #tv-frame::after { display: none; }
+    #screen { border-width: 4px; border-radius: 12px; }
+  }
+  /* Portrait on a touch device: ask for landscape */
+  #rotate-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, #2c1810 0%, #0a0506 100%);
+    z-index: 99;
+    color: #d4af37;
+    font-family: 'Press Start 2P', monospace;
+    text-align: center;
+    align-items: center; justify-content: center;
+    line-height: 2;
+  }
+  #rotate-overlay .inner { padding: 24px; font-size: 12px; }
+  #rotate-overlay .small { font-size: 8px; color: #f4e1c1; }
+  @media (orientation: portrait) and (pointer: coarse) {
+    #rotate-overlay { display: flex; }
+  }
 </style>
 </head>
 <body>
@@ -89,6 +130,13 @@
     <span class="key">SPACE</span> JUMP |
     <span class="key">M</span> MUSIC
   </div>
+  <div id="rotate-overlay">
+    <div class="inner">
+      ❦<br><br>
+      PRAY, TURN THY<br>DEVICE SIDEWAYS<br><br>
+      <span class="small">This tale is best beheld in landscape.</span>
+    </div>
+  </div>
 
 <script>
 // ================================================
@@ -105,7 +153,8 @@ ctx.imageSmoothingEnabled = false;
 function resizeGame() {
   // leave ~12% vertical room for the title bar + controls + TV frame padding
   const availW = window.innerWidth * 0.96;
-  const availH = window.innerHeight * 0.86;
+  // On short screens the title bar and hints are hidden, so the canvas may take more height
+  const availH = window.innerHeight * (window.innerHeight < 520 ? 0.90 : 0.86);
   const scale = Math.max(0.25, Math.min(availW / 800, availH / 600));
   canvas.style.width = Math.round(800 * scale) + 'px';
   canvas.style.height = Math.round(600 * scale) + 'px';
