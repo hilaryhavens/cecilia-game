@@ -2900,18 +2900,19 @@ function drawMinigame() {
   fillRect(cX + 14, 168, 212, 3, C.w);
   drawText('DELVILE CASTLE', cX + 120, 176, C.w, 1, 'center', false);
   ctx.restore();
-  // UI: virtue + gold
-  drawText('VIRTUE', 20, 60, C.h, 1, 'left', false);
-  for (let i = 0; i < 6; i++) fillRect(90 + i * 18, 55, 14, 18, i < stats.virtue ? C.v : C.u);
-  drawText('GOLD', 20, 100, C.g, 1, 'left', false);
-  drawText(fmtGold(stats.gold), 90, 100, C.g, 1, 'left', false);
+  // UI: virtue + gold, on a dark panel once the instruction banner has bowed out
+  if (mg.levelTime >= 420) {
+    fillRect(12, 48, 320, 74, C.k);
+    fillRect(12, 48, 320, 3, C.w);
+    drawText('VIRTUE', 24, 58, C.h, 2, 'left', false);
+    for (let i = 0; i < 6; i++) fillRect(140 + i * 26, 54, 20, 24, i < stats.virtue ? C.v : C.u);
+    drawText('GOLD', 24, 92, C.g, 2, 'left', false);
+    drawText(fmtGold(stats.gold), 140, 92, C.g, 2, 'left', false);
+  }
   fillRect(W - 280, 60, 250, 25, C.k);
   fillRect(W - 278, 62, 246, 21, C.u);
   fillRect(W - 278, 62, 246 * Math.min(mg.player.x / mg.endX, 1), 21, C.v);
   drawText('THE STREET', W - 275, 66, C.w, 1.5, 'left', false);
-  // instruction banner: tell the player exactly who to give to
-  fillRect(W / 2 - 300, 6, 600, 44, C.k);
-  fillRect(W / 2 - 300, 6, 600, 3, C.w);
   if (mg.levelTime < 420) {   // instructions bow out after ~7s so the stats show
     fillRect(W / 2 - 310, 6, 620, 74, C.k);
     fillRect(W / 2 - 310, 6, 620, 3, C.w);
