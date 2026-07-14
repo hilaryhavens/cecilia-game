@@ -1436,6 +1436,40 @@ if (touchUI) {
   buildTouchControls();
 }
 
+// Rectangles of the currently drawn choices, in 800x600 game coordinates,
+// refreshed every frame by drawChoices(). Used for tap hit-testing.
+const choiceRects = [];
+
+// Tapping the scene advances dialogue; tapping a choice highlights it,
+// tapping the highlighted choice confirms it (two-step guards against mis-taps).
+canvas.addEventListener('pointerdown', (e) => {
+  if (!touchUI) return;
+  const r = canvas.getBoundingClientRect();
+  const gx = (e.clientX - r.left) * (W / r.width);
+  const gy = (e.clientY - r.top) * (H / r.height);
+
+  if (state === 'scene' && textIdx >= fullText.length && currentScene.choices) {
+    const vis = visibleChoices(currentScene, gameState());
+    if (vis && vis.length) {
+      for (const c of choiceRects) {
+        if (gx >= c.x && gx <= c.x + c.w && gy >= c.y && gy <= c.y + c.h) {
+          if (c.i === choiceIdx) tapKey('Enter');           // second tap: confirm
+          else { choiceIdx = c.i; playSound('select'); }    // first tap: highlight
+          return;
+        }
+      }
+      return;   // while choosing, a stray tap elsewhere does nothing
+    }
+  }
+
+  // Elsewhere a tap acts as Space — but never during live action, where a
+  // stray tap would jump or steer; the buttons handle those.
+  const inert = (state === 'minigame' && !mg.finished)
+             || (state === 'chase' && !chase.finished)
+             || (state === 'room' && !(room && room.talk));
+  if (!inert) tapKey('Space');
+});
+
 // === SOUND ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function tone(freq, dur, type = 'square', vol = 0.08) {
@@ -2735,10 +2769,12 @@ function drawChoices(choices) {
   const total = layouts.reduce((s, l) => s + (l.length === 1 ? 36 : 60), 0)
               + gap * (choices.length - 1);
   cy = Math.min(cy, Math.max(330, 592 - total));
+  choiceRects.length = 0;
   for (let i = 0; i < choices.length; i++) {
     const lines = layouts[i];
     const bh = lines.length === 1 ? 36 : 60;
     const selected = i === choiceIdx;
+    choiceRects.push({ i, x: bx, y: cy, w: bw, h: bh });
     fillRect(bx, cy, bw, bh, selected ? C.n : C.k);
     fillRect(bx + 4, cy + 4, bw - 8, bh - 8, selected ? C.B : C.u);
     if (selected) drawText('►', bx + 14, cy + (bh - 12) / 2, C.y, 1.5, 'left', false);
