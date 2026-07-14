@@ -113,6 +113,42 @@
   @media (orientation: portrait) and (pointer: coarse) {
     #rotate-overlay { display: flex; }
   }
+  /* === TOUCH CONTROLS (shown only when body.touch) === */
+  #dpad, #btn-act, #btn-music { display: none; position: fixed; z-index: 20; touch-action: none; }
+  body.touch #dpad, body.touch #btn-act, body.touch #btn-music { display: block; }
+  #dpad {
+    left: calc(14px + env(safe-area-inset-left));
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    width: 170px; height: 170px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    border: 2px solid #d4af37;
+  }
+  #dpad span { position: absolute; color: #d4af37; font-size: 22px; pointer-events: none; opacity: 0.9; }
+  #dpad .n { top: 8px;  left: 50%; transform: translateX(-50%); }
+  #dpad .s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+  #dpad .w { left: 10px;  top: 50%; transform: translateY(-50%); }
+  #dpad .e { right: 10px; top: 50%; transform: translateY(-50%); }
+  #btn-act {
+    right: calc(20px + env(safe-area-inset-right));
+    bottom: calc(34px + env(safe-area-inset-bottom));
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    border: 2px solid #d4af37;
+    color: #d4af37; font-size: 30px; line-height: 80px; text-align: center;
+  }
+  #btn-act:active { background: rgba(212,175,55,0.35); }
+  #btn-music {
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    border: 2px solid #d4af37;
+    color: #d4af37; font-size: 20px; line-height: 40px; text-align: center;
+  }
+  #btn-music.off { opacity: 0.4; }
 </style>
 </head>
 <body>
@@ -1314,6 +1350,90 @@ window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 function keyPressed(code) {
   if (keys[code + '_p']) { keys[code + '_p'] = false; return true; }
   return false;
+}
+
+// === TOUCH CONTROLS ===
+// Touch UI appears on coarse-pointer devices; ?touch=1 forces it on for desktop testing.
+const touchUI = matchMedia('(pointer: coarse)').matches
+             || new URLSearchParams(location.search).has('touch');
+
+// Synthesize the same flags the keyboard listeners set, so all game code works unchanged.
+function pressKey(code) {
+  if (!keys[code]) keys[code + '_p'] = true;
+  keys[code] = true;
+}
+function releaseKey(code) { keys[code] = false; }
+function tapKey(code) { keys[code + '_p'] = true; }  // one-shot pulse, nothing left held
+
+function buildTouchControls() {
+  const pad = document.createElement('div');
+  pad.id = 'dpad';
+  pad.innerHTML = '<span class="n">▲</span><span class="s">▼</span><span class="w">◀</span><span class="e">▶</span>';
+  const act = document.createElement('div');
+  act.id = 'btn-act';
+  act.textContent = '✦';
+  const mus = document.createElement('div');
+  mus.id = 'btn-music';
+  mus.textContent = '♪';
+  document.body.append(pad, act, mus);
+
+  // --- d-pad: one pointer steers; sliding across it re-aims without lifting ---
+  const held = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+  function setDirs(next) {
+    for (const code in held) {
+      if (next[code] && !held[code]) pressKey(code);
+      if (!next[code] && held[code]) releaseKey(code);
+      held[code] = next[code];
+    }
+  }
+  function dirsFromEvent(e) {
+    const r = pad.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2);
+    const dy = e.clientY - (r.top + r.height / 2);
+    const dead = r.width * 0.12;   // center dead zone; diagonals allowed
+    return { ArrowLeft: dx < -dead, ArrowRight: dx > dead,
+             ArrowUp: dy < -dead,  ArrowDown: dy > dead };
+  }
+  let padPointer = null;
+  pad.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    padPointer = e.pointerId;
+    setDirs(dirsFromEvent(e));
+    try { pad.setPointerCapture(e.pointerId); } catch {}  // pointer may already be gone on ultra-fast taps
+  });
+  pad.addEventListener('pointermove', (e) => {
+    if (e.pointerId === padPointer) setDirs(dirsFromEvent(e));
+  });
+  function padEnd(e) {
+    if (e.pointerId === padPointer) {
+      padPointer = null;
+      setDirs({ ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false });
+    }
+  }
+  pad.addEventListener('pointerup', padEnd);
+  pad.addEventListener('pointercancel', padEnd);
+
+  // --- action button = Space (every confirm in the game accepts Space) ---
+  act.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    pressKey('Space');
+    try { act.setPointerCapture(e.pointerId); } catch {}
+  });
+  act.addEventListener('pointerup', () => releaseKey('Space'));
+  act.addEventListener('pointercancel', () => releaseKey('Space'));
+
+  // --- music toggle: same behavior as the M key (first tap only wakes audio) ---
+  mus.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const woke = wakeAudio();
+    if (!woke) { musicOn = !musicOn; if (musicOn) { mBar = 0; mIdx = 0; bIdx = 0; } }
+    mus.classList.toggle('off', !musicOn);
+  });
+}
+
+if (touchUI) {
+  document.body.classList.add('touch');
+  buildTouchControls();
 }
 
 // === SOUND ===
