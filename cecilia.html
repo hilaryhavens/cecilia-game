@@ -2912,12 +2912,14 @@ function drawMinigame() {
   // instruction banner: tell the player exactly who to give to
   fillRect(W / 2 - 300, 6, 600, 44, C.k);
   fillRect(W / 2 - 300, 6, 600, 3, C.w);
-  fillRect(W / 2 - 310, 6, 620, 74, C.k);
-  fillRect(W / 2 - 310, 6, 620, 3, C.w);
-  drawText('GIVE TO THE WORTHY (GREEN, DOWN)', W / 2, 16, C.w, 2, 'center');
-  drawText('JUMP OVER SPENDTHRIFTS (RED)', W / 2, 48, C.r, 2, 'center');
-  fillRect(W / 2 - 260, H - 44, 520, 40, C.k);
-  drawText('←→ WALK   ↓/S GIVE   SPACE JUMP', W / 2, H - 34, C.w, 2, 'center');
+  if (mg.levelTime < 420) {   // instructions bow out after ~7s so the stats show
+    fillRect(W / 2 - 310, 6, 620, 74, C.k);
+    fillRect(W / 2 - 310, 6, 620, 3, C.w);
+    drawText('GIVE TO THE WORTHY (GREEN, DOWN)', W / 2, 16, C.w, 2, 'center');
+    drawText('JUMP OVER SPENDTHRIFTS (RED)', W / 2, 48, C.r, 2, 'center');
+    fillRect(W / 2 - 310, H - 44, 620, 40, C.k);
+    drawText('ARROWS WALK   DOWN GIVE   SPACE JUMP', W / 2, H - 34, C.w, 2, 'center');
+  }
 }
 
 // === DELIRIUM CHASE ===
