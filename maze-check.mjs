@@ -23,6 +23,9 @@ const sandbox = {
   clearTimeout: () => {},
   AudioContext: proxy,
   webkitAudioContext: proxy,
+  matchMedia: () => ({ matches: false }),
+  location: { search: '' },
+  URLSearchParams,
   performance, console, Math, Date, JSON, Object, Array,
 };
 sandbox.window = sandbox;
